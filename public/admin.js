@@ -10,11 +10,16 @@ const platformTypes = {
 const api = (path, opts = {}) =>
   fetch(`/api${path}`, { credentials: "include", cache: "no-store", ...opts });
 
-function toast(msg) {
+function toast(msg, kind = "info") {
   const el = $("toast");
   el.textContent = msg;
+  el.classList.remove("toast-error", "toast-success");
+  if (kind === "error") el.classList.add("toast-error");
+  if (kind === "success") el.classList.add("toast-success");
   el.classList.add("show");
-  setTimeout(() => el.classList.remove("show"), 3200);
+  setTimeout(() => {
+    el.classList.remove("show", "toast-error", "toast-success");
+  }, 3200);
 }
 
 function escapeHtml(s) {
@@ -253,6 +258,12 @@ async function openBatch(id) {
 $("files").addEventListener("change", renderPendingUploadPreview);
 
 $("createBatch").addEventListener("click", async () => {
+  const channelId = $("channelId").value.trim();
+  if (!channelId) {
+    toast("Add a Slack channel ID before creating a batch", "error");
+    $("channelId").focus();
+    return;
+  }
   const res = await api("/batches", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -260,12 +271,12 @@ $("createBatch").addEventListener("click", async () => {
       name: $("name").value,
       platform: $("platform").value,
       assetType: $("assetType").value,
-      channelId: $("channelId").value.trim(),
+      channelId,
     }),
   });
   const data = await res.json();
-  if (!res.ok) return toast(data.error ?? "Create failed");
-  toast("Batch created");
+  if (!res.ok) return toast(data.error ?? "Create failed", "error");
+  toast("Batch created", "success");
   await loadBatches();
   await openBatch(data.batch.id);
 });

@@ -322,19 +322,31 @@ textarea {
 
 .toast {
   position: fixed;
-  left: 16px;
+  top: 16px;
   right: 16px;
-  bottom: 16px;
+  left: auto;
+  bottom: auto;
+  z-index: 300;
+  max-width: min(380px, calc(100vw - 32px));
   background: var(--text);
   color: #fff;
-  padding: 12px 14px;
+  padding: 12px 16px;
   border-radius: 12px;
   display: none;
   font-size: 0.92rem;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.22);
 }
 
 .toast.show {
   display: block;
+}
+
+.toast.toast-error {
+  background: #b42318;
+}
+
+.toast.toast-success {
+  background: #067647;
 }
 
 /* Review page — dark mode */
@@ -1249,6 +1261,156 @@ body.lightbox-open {
 
 #lightbox.is-linkedin .ig-modal-media {
   background: #f3f2ef;
+}
+
+#lightbox.is-linkedin.is-li-desktop .ig-modal-media.li-modal-media--feed {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  background: #fff;
+  overflow-y: auto;
+}
+
+#lightbox.is-linkedin .li-modal-caption-top {
+  padding: 12px 16px 8px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: #191919;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+  white-space: pre-wrap;
+  flex-shrink: 0;
+}
+
+#lightbox.is-linkedin .ig-modal-stage.li-modal-stage--grid {
+  min-height: 0;
+  max-height: none;
+  display: block;
+  padding: 0;
+  background: #fff;
+}
+
+.li-feed-preview {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  overflow: hidden;
+  color: #191919;
+}
+
+.li-feed-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px 8px;
+}
+
+.li-feed-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 4px;
+  object-fit: contain;
+  background: #fff;
+}
+
+.li-feed-head-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.82rem;
+  color: #666;
+}
+
+.li-feed-head-text strong {
+  color: #191919;
+  font-size: 0.92rem;
+}
+
+.li-feed-caption {
+  padding: 0 14px 12px;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.li-feed-cta {
+  margin: 12px 14px 14px;
+  background: #f3f2ef !important;
+  border-color: #ccc !important;
+  color: #0a66c2 !important;
+}
+
+.li-grid {
+  display: grid;
+  gap: 2px;
+  background: #e0e0e0;
+  width: 100%;
+}
+
+.li-grid--1 {
+  grid-template-columns: 1fr;
+}
+
+.li-grid--2 {
+  grid-template-columns: 1fr 1fr;
+  min-height: 220px;
+}
+
+.li-grid--3 {
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  min-height: 280px;
+  max-height: min(48vh, 420px);
+}
+
+.li-grid--multi {
+  grid-template-columns: 2fr 1fr;
+  grid-template-rows: repeat(3, 1fr);
+  min-height: 320px;
+  max-height: min(52vh, 480px);
+}
+
+.li-grid-cell {
+  position: relative;
+  padding: 0;
+  border: 0;
+  background: #000;
+  cursor: pointer;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.li-grid-cell--hero {
+  grid-row: 1 / -1;
+}
+
+.li-grid-cell img,
+.li-grid-cell video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  min-height: 100px;
+}
+
+.li-grid--1 .li-grid-cell img,
+.li-grid--1 .li-grid-cell video {
+  max-height: min(48vh, 420px);
+  object-fit: contain;
+  background: #f3f2ef;
+}
+
+.li-grid-more {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  font-size: 1.75rem;
+  font-weight: 700;
+  pointer-events: none;
 }
 
 #lightbox.is-linkedin .ig-modal-side {

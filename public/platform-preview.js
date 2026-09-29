@@ -27,6 +27,120 @@ export function isMobileReview() {
   return window.matchMedia("(max-width: 840px)").matches;
 }
 
+export function isDesktopReview() {
+  return window.matchMedia("(min-width: 841px)").matches;
+}
+
+function appendLinkedInGridCell(grid, slide, index, extraCount, onSelect) {
+  const cell = document.createElement("button");
+  cell.type = "button";
+  cell.className = "li-grid-cell";
+  if (index === 0) cell.classList.add("li-grid-cell--hero");
+  if (extraCount > 0) cell.classList.add("li-grid-cell--more");
+
+  const isVideo = /\.(mp4|mov|webm)(\?|$)/i.test(slide.url);
+  if (isVideo) {
+    const v = document.createElement("video");
+    v.src = slide.url;
+    v.muted = true;
+    v.playsInline = true;
+    v.preload = "metadata";
+    cell.appendChild(v);
+  } else {
+    const img = document.createElement("img");
+    img.src = slide.url;
+    img.alt = slide.label ?? `Image ${index + 1}`;
+    img.loading = "lazy";
+    cell.appendChild(img);
+  }
+
+  if (extraCount > 0) {
+    const overlay = document.createElement("span");
+    overlay.className = "li-grid-more";
+    overlay.textContent = `+${extraCount}`;
+    cell.appendChild(overlay);
+  }
+
+  cell.addEventListener("click", () => onSelect?.(index));
+  grid.appendChild(cell);
+}
+
+/** LinkedIn desktop feed-style multi-image grid (caption should sit above this). */
+export function buildLinkedInMediaGrid(slides, onSelect) {
+  const list = slideList(slides);
+  const grid = document.createElement("div");
+  grid.className = "li-grid";
+  if (!list.length) return grid;
+
+  if (list.length === 1) {
+    grid.classList.add("li-grid--1");
+    appendLinkedInGridCell(grid, list[0], 0, 0, onSelect);
+    return grid;
+  }
+  if (list.length === 2) {
+    grid.classList.add("li-grid--2");
+    appendLinkedInGridCell(grid, list[0], 0, 0, onSelect);
+    appendLinkedInGridCell(grid, list[1], 1, 0, onSelect);
+    return grid;
+  }
+
+  if (list.length === 3) {
+    grid.classList.add("li-grid--3");
+    appendLinkedInGridCell(grid, list[0], 0, 0, onSelect);
+    appendLinkedInGridCell(grid, list[1], 1, 0, onSelect);
+    appendLinkedInGridCell(grid, list[2], 2, 0, onSelect);
+    return grid;
+  }
+
+  grid.classList.add("li-grid--multi");
+  appendLinkedInGridCell(grid, list[0], 0, 0, onSelect);
+  appendLinkedInGridCell(grid, list[1], 1, 0, onSelect);
+  appendLinkedInGridCell(grid, list[2], 2, 0, onSelect);
+  const fourth = list[3];
+  const extra = list.length > 4 ? list.length - 4 : 0;
+  appendLinkedInGridCell(grid, fourth, 3, extra, onSelect);
+  return grid;
+}
+
+function renderLinkedInFeedPreview(mount, list, title, openFullscreen, payload) {
+  const wrap = document.createElement("div");
+  wrap.className = "li-feed-preview";
+
+  const head = document.createElement("div");
+  head.className = "li-feed-head";
+  head.innerHTML = `
+    ${logoAvatarHtml("li-feed-avatar")}
+    <div class="li-feed-head-text">
+      <strong>${ZERO1.linkedin.name}</strong>
+      <span>${ZERO1.linkedin.headline}</span>
+    </div>
+  `;
+  wrap.appendChild(head);
+
+  const caption = document.createElement("div");
+  caption.className = "li-feed-caption";
+  caption.textContent = title || ZERO1.linkedin.name;
+  wrap.appendChild(caption);
+
+  const grid = buildLinkedInMediaGrid(list, (index) =>
+    openPreviewFromStrip(openFullscreen, payload, list, index, title),
+  );
+  wrap.appendChild(grid);
+
+  if (payload) {
+    const cta = document.createElement("button");
+    cta.type = "button";
+    cta.className = "preview-strip-cta li-feed-cta";
+    cta.textContent = "Open platform preview";
+    cta.addEventListener("click", () =>
+      openPreviewFromStrip(openFullscreen, payload, list, 0, title),
+    );
+    wrap.appendChild(cta);
+  }
+
+  mount.appendChild(wrap);
+}
+
 /** Full-screen media only (no platform chrome / review slot). */
 export function toMediaOnlyPayload(payload) {
   if (!payload) return null;
@@ -208,7 +322,11 @@ export function renderPlatformPreview(mount, opts, openFullscreen) {
   }
 
   if (list.length) {
-    renderHorizontalSlideStrip(mount, list, openFullscreen, payload, title);
+    if (platform === "linkedin" && isDesktopReview()) {
+      renderLinkedInFeedPreview(mount, list, title, openFullscreen, payload);
+    } else {
+      renderHorizontalSlideStrip(mount, list, openFullscreen, payload, title);
+    }
     return payload;
   }
 
@@ -439,6 +557,7 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
     <div class="lightbox-layout">
     <div class="platform-modal ig-modal">
       <div class="platform-modal-media ig-modal-media">
+        <div class="li-modal-caption-top" hidden></div>
         <button type="button" class="ig-modal-nav prev" aria-label="Previous slide">‹</button>
         <div class="ig-modal-stage"></div>
         <button type="button" class="ig-modal-nav next" aria-label="Next slide">›</button>
@@ -475,6 +594,8 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
 
   const modal = el.querySelector(".platform-modal");
   const fallbackStage = el.querySelector(".ig-modal-fallback-stage");
+  const mediaCol = el.querySelector(".ig-modal-media");
+  const liCaptionTop = el.querySelector(".li-modal-caption-top");
   const stage = el.querySelector(".ig-modal-stage");
   const captionEl = el.querySelector(".ig-modal-caption");
   const handleEl = el.querySelector(".ig-modal-handle");
@@ -500,6 +621,36 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
 
   const syncSlide = () => {
     const slide = ctx.slides[ctx.index];
+    const liDesktop =
+      ctx.platform === "linkedin" &&
+      isDesktopReview() &&
+      ctx.slides.length > 0 &&
+      !ctx.slides.some((s) => s.embed);
+
+    if (liDesktop) {
+      stage.innerHTML = "";
+      stage.classList.add("li-modal-stage--grid");
+      mediaCol.classList.add("li-modal-media--feed");
+      el.classList.add("is-li-desktop");
+      liCaptionTop.hidden = false;
+      liCaptionTop.textContent = captionEl.textContent;
+      captionEl.hidden = true;
+      stage.appendChild(
+        buildLinkedInMediaGrid(ctx.slides, (index) => {
+          ctx.index = index;
+        }),
+      );
+      prevBtn.hidden = true;
+      nextBtn.hidden = true;
+      return;
+    }
+
+    stage.classList.remove("li-modal-stage--grid");
+    mediaCol.classList.remove("li-modal-media--feed");
+    el.classList.remove("is-li-desktop");
+    liCaptionTop.hidden = true;
+    captionEl.hidden = false;
+
     renderMediaStage(stage, slide, ctx.platform);
     const multi = ctx.slides.length > 1 && !slide?.embed;
     prevBtn.hidden = !multi;
@@ -525,6 +676,11 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
     el.hidden = true;
     el.classList.remove("is-linkedin", "is-instagram", "is-fallback", "is-media-only");
     stage.innerHTML = "";
+    stage.classList.remove("li-modal-stage--grid");
+    mediaCol.classList.remove("li-modal-media--feed");
+    el.classList.remove("is-li-desktop");
+    liCaptionTop.hidden = true;
+    captionEl.hidden = false;
     fallbackStage.innerHTML = "";
     document.body.classList.remove("lightbox-open");
     if (reviewSlot?.el && slot.contains(reviewSlot.el) && reviewSlot.home) {
