@@ -17,6 +17,69 @@ function toast(msg) {
   setTimeout(() => el.classList.remove("show"), 3200);
 }
 
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function isVideoUrl(url) {
+  return /\.(mp4|mov|webm)(\?|$)/i.test(url ?? "");
+}
+
+function renderSlideThumbs(slides, max = 6) {
+  const list = (slides ?? []).filter((s) => s?.url && !s.embed);
+  if (!list.length) return "";
+  return `<div class="asset-thumb-row">${list
+    .slice(0, max)
+    .map((s) => {
+      if (isVideoUrl(s.url)) {
+        return `<div class="asset-thumb asset-thumb--video"><video src="${escapeHtml(s.url)}" muted playsinline preload="metadata"></video></div>`;
+      }
+      return `<img class="asset-thumb" src="${escapeHtml(s.url)}" alt="" loading="lazy" />`;
+    })
+    .join("")}${list.length > max ? `<span class="asset-thumb-more">+${list.length - max}</span>` : ""}</div>`;
+}
+
+function renderPendingUploadPreview() {
+  const root = $("uploadPreview");
+  const files = $("files").files;
+  root.innerHTML = "";
+  if (!files?.length) {
+    root.hidden = true;
+    return;
+  }
+  root.hidden = false;
+  root.appendChild(document.createTextNode("Selected files: "));
+  const row = document.createElement("div");
+  row.className = "asset-thumb-row";
+  for (const f of files) {
+    const wrap = document.createElement("div");
+    wrap.className = "asset-thumb";
+    wrap.title = f.name;
+    if (f.type.startsWith("video/")) {
+      wrap.classList.add("asset-thumb--video");
+      const v = document.createElement("video");
+      v.src = URL.createObjectURL(f);
+      v.muted = true;
+      v.playsInline = true;
+      wrap.appendChild(v);
+    } else if (f.type.startsWith("image/")) {
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(f);
+      img.alt = f.name;
+      wrap.appendChild(img);
+    } else {
+      wrap.classList.add("asset-thumb--file");
+      wrap.textContent = f.name.slice(0, 8);
+    }
+    row.appendChild(wrap);
+  }
+  root.appendChild(row);
+}
+
 function syncAssetTypes() {
   const select = $("assetType");
   select.innerHTML = "";
@@ -152,8 +215,11 @@ async function openBatch(id) {
   $("assetList").innerHTML = data.assets
     .map(
       (a) => `<div class="asset-item">
-        <div><strong>${a.index}. ${a.title}</strong><br/><small>${a.slides.length} preview(s)</small></div>
-        <button class="btn danger" data-del-asset="${a.id}" type="button">Remove</button>
+        <div class="asset-item-body">
+          ${renderSlideThumbs(a.slides)}
+          <div><strong>${a.index}. ${escapeHtml(a.title)}</strong><br/><small>${a.slides.length} preview(s)</small></div>
+        </div>
+        <button class="btn btn-sm danger" data-del-asset="${a.id}" type="button">Remove</button>
       </div>`,
     )
     .join("");
@@ -178,7 +244,10 @@ async function openBatch(id) {
   $("assetTitle").value = "";
   $("linkUrl").value = "";
   $("files").value = "";
+  renderPendingUploadPreview();
 }
+
+$("files").addEventListener("change", renderPendingUploadPreview);
 
 $("createBatch").addEventListener("click", async () => {
   const res = await api("/batches", {

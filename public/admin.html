@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Social Review Admin</title>
-    <link rel="stylesheet" href="/styles.css?v=9" />
+    <link rel="stylesheet" href="/styles.css?v=10" />
   </head>
   <body class="admin-page">
     <div id="loginView" class="login-wrap">
@@ -48,7 +48,7 @@
             </div>
             <label for="channelId">Slack channel ID</label>
             <input id="channelId" placeholder="C0123456789" />
-            <button class="btn block" id="createBatch" type="button" style="margin-top: 12px">
+            <button class="btn btn-sm" id="createBatch" type="button" style="margin-top: 12px">
               Create batch
             </button>
           </section>
@@ -91,10 +91,11 @@
 
             <div id="uploadFields">
               <label>Files (up to 10)</label>
-              <div class="drop">
+              <div class="drop drop-compact">
                 <input id="files" type="file" multiple accept="image/*,video/*" />
                 <p class="sub" style="margin: 8px 0 0">Carousel slides, reels, posts, stories.</p>
               </div>
+              <div class="upload-preview" id="uploadPreview" hidden></div>
             </div>
 
             <div id="linkFields" hidden>
@@ -102,16 +103,16 @@
               <input id="linkUrl" placeholder="https://…" />
             </div>
 
-            <button class="btn block" id="addAsset" type="button" style="margin-top: 12px">
+            <button class="btn btn-sm" id="addAsset" type="button" style="margin-top: 12px">
               Add to batch
             </button>
 
             <div class="asset-list" id="assetList"></div>
 
             <div class="admin-actions-row">
-              <button class="btn secondary" id="notifySlack" type="button">Notify Slack</button>
-              <button class="btn" id="summarySlack" type="button">Post summary</button>
-              <button class="btn danger" id="deleteBatch" type="button">Delete batch</button>
+              <button class="btn btn-sm secondary" id="notifySlack" type="button">Notify Slack</button>
+              <button class="btn btn-sm" id="summarySlack" type="button">Post summary</button>
+              <button class="btn btn-sm danger" id="deleteBatch" type="button">Delete batch</button>
             </div>
 
             <p class="sub" id="reviewerList" style="margin-top: 12px"></p>
@@ -121,6 +122,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="/admin.js?v=9" type="module"></script>
+    <script src="/admin.js?v=10" type="module"></script>
   </body>
 </html>

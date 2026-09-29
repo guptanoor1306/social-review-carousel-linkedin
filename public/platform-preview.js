@@ -23,6 +23,23 @@ export const ZERO1 = {
 const IG_EMBED_SCRIPT = "https://www.instagram.com/embed.js";
 let igEmbedLoading = null;
 
+export function isMobileReview() {
+  return window.matchMedia("(max-width: 840px)").matches;
+}
+
+/** Full-screen media only (no platform chrome / review slot). */
+export function toMediaOnlyPayload(payload) {
+  if (!payload) return null;
+  const slides = (payload.slides ?? []).filter((s) => s?.url && !s.embed);
+  if (!slides.length) return null;
+  return {
+    platform: "fallback",
+    slides,
+    index: payload.index ?? 0,
+    title: payload.title ?? "",
+  };
+}
+
 export function supportsPlatformPreview(platform, assetType) {
   if (platform === "instagram" && (assetType === "carousel" || assetType === "post")) {
     return true;
@@ -138,6 +155,7 @@ export function renderPlatformPreview(mount, opts, openFullscreen) {
   const thumb = payload?.slides?.[0];
   const thumbUrl = thumb?.embed ? null : thumb?.url;
   const formatLabel = assetType.charAt(0).toUpperCase() + assetType.slice(1);
+  const ctaLabel = isMobileReview() ? "View full screen" : "Continue in full preview";
   hint.innerHTML = `
     <button type="button" class="preview-minimized-open">
       ${
@@ -145,12 +163,18 @@ export function renderPlatformPreview(mount, opts, openFullscreen) {
           ? `<img class="preview-minimized-thumb" src="${thumbUrl}" alt="" />`
           : `<div class="preview-minimized-thumb preview-minimized-thumb--empty">${formatLabel}</div>`
       }
-      <span class="preview-minimized-cta">Continue in full preview</span>
+      <span class="preview-minimized-cta">${ctaLabel}</span>
     </button>
     <p class="sub preview-minimized-note">${ZERO1.instagram.name} · rating &amp; feedback below</p>
   `;
   hint.querySelector(".preview-minimized-open").addEventListener("click", () => {
-    if (payload) openFullscreen(payload);
+    if (!payload) return;
+    if (isMobileReview()) {
+      const media = toMediaOnlyPayload(payload);
+      if (media) openFullscreen(media);
+      return;
+    }
+    openFullscreen(payload);
   });
   mount.appendChild(hint);
   return payload;
@@ -382,7 +406,7 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
 
   const close = () => {
     el.hidden = true;
-    el.classList.remove("is-linkedin", "is-instagram", "is-fallback");
+    el.classList.remove("is-linkedin", "is-instagram", "is-fallback", "is-media-only");
     stage.innerHTML = "";
     fallbackStage.innerHTML = "";
     document.body.classList.remove("lightbox-open");
@@ -430,6 +454,8 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
 
       el.classList.toggle("is-linkedin", platform === "linkedin");
       el.classList.toggle("is-instagram", platform === "instagram");
+      el.classList.toggle("is-fallback", platform === "fallback");
+      el.classList.toggle("is-media-only", platform === "fallback");
       applyPlatformBranding(platform);
 
       const isEmbed = ctx.slides.some((s) => s.embed);

@@ -1,9 +1,11 @@
 import {
   buildImmersivePayload,
+  isMobileReview,
   mountLightbox,
   PLATFORM_LOGO,
   renderPlatformPreview,
   supportsPlatformPreview,
+  toMediaOnlyPayload,
 } from "./platform-preview.js";
 
 const $ = (id) => document.getElementById(id);
@@ -116,13 +118,22 @@ function showAsset(i) {
   };
   const openPreview = (payload) => {
     if (!payload) return;
+    if (isMobileReview()) {
+      const media = toMediaOnlyPayload(payload);
+      if (!media) {
+        toast("Use the draft link to view this asset");
+        return;
+      }
+      lightbox.open(media);
+      return;
+    }
     $("reviewFlow").hidden = true;
     lightbox.open(payload);
   };
   renderPlatformPreview($("previewMount"), previewOpts, openPreview);
 
   const immersivePayload = buildImmersivePayload(previewOpts) ?? null;
-  if (immersivePayload) {
+  if (immersivePayload && !isMobileReview()) {
     requestAnimationFrame(() => openPreview(immersivePayload));
   } else {
     $("reviewFlow").hidden = false;

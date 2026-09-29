@@ -143,6 +143,84 @@ textarea {
   cursor: not-allowed;
 }
 
+.btn.btn-sm {
+  padding: 8px 14px;
+  font-size: 0.875rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+#batchPanel .drop-compact {
+  padding: 14px 12px;
+}
+
+.upload-preview {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.asset-item-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.asset-thumb-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.asset-thumb {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  background: #f3f4f6;
+  flex-shrink: 0;
+}
+
+.asset-thumb-row .asset-thumb,
+.asset-thumb--video {
+  width: 56px;
+  height: 56px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #f3f4f6;
+}
+
+.asset-thumb--video video,
+.asset-thumb-row img.asset-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.asset-thumb--file {
+  display: grid;
+  place-items: center;
+  font-size: 0.65rem;
+  padding: 4px;
+  text-align: center;
+  word-break: break-all;
+}
+
+.asset-thumb-more {
+  align-self: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  padding: 0 4px;
+}
+
+.asset-item {
+  align-items: flex-start;
+}
+
 .seg {
   display: flex;
   gap: 8px;
@@ -1311,6 +1389,36 @@ body.lightbox-open {
     top: max(8px, env(safe-area-inset-top));
     right: 8px;
   }
+
+  #lightbox.is-media-only {
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.92);
+  }
+
+  #lightbox.is-media-only .lightbox-shell,
+  #lightbox.is-media-only .lightbox-layout {
+    display: none;
+  }
+
+  #lightbox.is-media-only .ig-modal-fallback-stage {
+    width: 100%;
+    height: 100%;
+    max-height: 100dvh;
+    display: grid;
+    place-items: center;
+    padding: env(safe-area-inset-top) 8px env(safe-area-inset-bottom);
+  }
+
+  #lightbox.is-media-only .ig-modal-fallback-stage img,
+  #lightbox.is-media-only .ig-modal-fallback-stage video {
+    max-width: 100%;
+    max-height: 100dvh;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
 }
 
 /* Admin — desktop workspace */
@@ -1398,8 +1506,8 @@ body.admin-page {
 }
 
 .admin-actions-row .btn {
-  flex: 1;
-  min-width: 140px;
+  flex: 0 1 auto;
+  min-width: 0;
 }
 
 .review-form-head {
