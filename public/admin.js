@@ -29,18 +29,18 @@ function isVideoUrl(url) {
   return /\.(mp4|mov|webm)(\?|$)/i.test(url ?? "");
 }
 
-function renderSlideThumbs(slides, max = 6) {
+function renderSlideThumbs(slides) {
   const list = (slides ?? []).filter((s) => s?.url && !s.embed);
   if (!list.length) return "";
-  return `<div class="asset-thumb-row">${list
-    .slice(0, max)
+  const items = list
     .map((s) => {
       if (isVideoUrl(s.url)) {
-        return `<div class="asset-thumb asset-thumb--video"><video src="${escapeHtml(s.url)}" muted playsinline preload="metadata"></video></div>`;
+        return `<div class="asset-thumb--video"><video src="${escapeHtml(s.url)}" muted playsinline preload="metadata"></video></div>`;
       }
-      return `<img class="asset-thumb" src="${escapeHtml(s.url)}" alt="" loading="lazy" />`;
+      return `<img src="${escapeHtml(s.url)}" alt="" loading="lazy" />`;
     })
-    .join("")}${list.length > max ? `<span class="asset-thumb-more">+${list.length - max}</span>` : ""}</div>`;
+    .join("");
+  return `<div class="carousel carousel-compact">${items}</div>`;
 }
 
 function renderPendingUploadPreview() {
@@ -54,28 +54,31 @@ function renderPendingUploadPreview() {
   root.hidden = false;
   root.appendChild(document.createTextNode("Selected files: "));
   const row = document.createElement("div");
-  row.className = "asset-thumb-row";
+  row.className = "carousel carousel-compact";
   for (const f of files) {
-    const wrap = document.createElement("div");
-    wrap.className = "asset-thumb";
-    wrap.title = f.name;
     if (f.type.startsWith("video/")) {
-      wrap.classList.add("asset-thumb--video");
+      const wrap = document.createElement("div");
+      wrap.className = "asset-thumb--video";
+      wrap.title = f.name;
       const v = document.createElement("video");
       v.src = URL.createObjectURL(f);
       v.muted = true;
       v.playsInline = true;
       wrap.appendChild(v);
+      row.appendChild(wrap);
     } else if (f.type.startsWith("image/")) {
       const img = document.createElement("img");
       img.src = URL.createObjectURL(f);
       img.alt = f.name;
-      wrap.appendChild(img);
+      img.title = f.name;
+      row.appendChild(img);
     } else {
-      wrap.classList.add("asset-thumb--file");
+      const wrap = document.createElement("div");
+      wrap.className = "asset-thumb--file";
+      wrap.title = f.name;
       wrap.textContent = f.name.slice(0, 8);
+      row.appendChild(wrap);
     }
-    row.appendChild(wrap);
   }
   root.appendChild(row);
 }

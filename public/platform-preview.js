@@ -137,75 +137,142 @@ function platformLabel(platform) {
   return platform === "linkedin" ? "LinkedIn" : "Instagram";
 }
 
+function openPreviewFromStrip(openFullscreen, payload, list, index, title) {
+  if (isMobileReview()) {
+    const media = toMediaOnlyPayload({ ...payload, slides: list, index, title });
+    if (media) {
+      media.index = index;
+      openFullscreen(media);
+    }
+    return;
+  }
+  if (payload && payload.platform !== "fallback") {
+    openFullscreen({ ...payload, slides: list, index, title });
+    return;
+  }
+  openFullscreen({
+    platform: "fallback",
+    slides: list,
+    index,
+    title: title ?? "",
+  });
+}
+
+function renderHorizontalSlideStrip(mount, list, openFullscreen, payload, title) {
+  const wrap = document.createElement("div");
+  wrap.className = "preview-strip-wrap";
+  const strip = document.createElement("div");
+  strip.className = "carousel preview-carousel";
+  list.forEach((slide, i) => {
+    appendSlideMedia(
+      strip,
+      slide,
+      () => openPreviewFromStrip(openFullscreen, payload, list, i, title),
+      true,
+    );
+  });
+  wrap.appendChild(strip);
+
+  if (payload?.platform && payload.platform !== "fallback") {
+    const cta = document.createElement("button");
+    cta.type = "button";
+    cta.className = "preview-strip-cta";
+    cta.textContent = isMobileReview() ? "View full screen" : "Open platform preview";
+    cta.addEventListener("click", () => openPreviewFromStrip(openFullscreen, payload, list, 0, title));
+    wrap.appendChild(cta);
+    const note = document.createElement("p");
+    note.className = "sub preview-minimized-note";
+    note.textContent = `${ZERO1.instagram.name} · swipe slides · rate below`;
+    wrap.appendChild(note);
+  }
+
+  mount.appendChild(wrap);
+}
+
 export function renderPlatformPreview(mount, opts, openFullscreen) {
   const { platform, assetType, slides, title, postUrl } = opts;
   mount.innerHTML = "";
   mount.className = "preview-mount";
 
   const payload = buildImmersivePayload(opts);
+  const list = slideList(slides);
 
   if (!supportsPlatformPreview(platform, assetType)) {
-    renderFallbackStrip(mount, slides, openFullscreen);
+    if (list.length) {
+      renderHorizontalSlideStrip(mount, list, openFullscreen, null, title);
+    }
+    return list.length
+      ? { platform: "fallback", slides: list, index: 0, title: title ?? "" }
+      : null;
+  }
+
+  if (list.length) {
+    renderHorizontalSlideStrip(mount, list, openFullscreen, payload, title);
     return payload;
   }
 
-  const label = platformLabel(platform);
+  const formatLabel = assetType.charAt(0).toUpperCase() + assetType.slice(1);
   const hint = document.createElement("div");
   hint.className = "preview-immersive-hint";
-  const thumb = payload?.slides?.[0];
-  const thumbUrl = thumb?.embed ? null : thumb?.url;
-  const formatLabel = assetType.charAt(0).toUpperCase() + assetType.slice(1);
   const ctaLabel = isMobileReview() ? "View full screen" : "Continue in full preview";
   hint.innerHTML = `
-    <button type="button" class="preview-minimized-open">
-      ${
-        thumbUrl
-          ? `<img class="preview-minimized-thumb" src="${thumbUrl}" alt="" />`
-          : `<div class="preview-minimized-thumb preview-minimized-thumb--empty">${formatLabel}</div>`
-      }
+    <button type="button" class="preview-minimized-open preview-minimized-open--compact">
+      <div class="preview-minimized-thumb preview-minimized-thumb--empty">${formatLabel} link</div>
       <span class="preview-minimized-cta">${ctaLabel}</span>
     </button>
     <p class="sub preview-minimized-note">${ZERO1.instagram.name} · rating &amp; feedback below</p>
   `;
   hint.querySelector(".preview-minimized-open").addEventListener("click", () => {
     if (!payload) return;
-    if (isMobileReview()) {
-      const media = toMediaOnlyPayload(payload);
-      if (media) openFullscreen(media);
-      return;
-    }
-    openFullscreen(payload);
+    openPreviewFromStrip(openFullscreen, payload, payload.slides ?? [], 0, title);
   });
   mount.appendChild(hint);
   return payload;
 }
 
-function renderFallbackStrip(mount, slides, openFullscreen) {
-  const strip = document.createElement("div");
-  strip.className = "carousel";
-  const list = slideList(slides);
-  list.forEach((slide, i) => {
-    appendSlideMedia(
-      strip,
-      slide,
-      () =>
-        openFullscreen({
-          platform: "fallback",
-          slides: list,
-          index: i,
-          title: "",
-        }),
-      true,
-    );
+function bindTapUnlessScroll(el, onTap) {
+  let px = 0;
+  let py = 0;
+  let moved = false;
+  el.addEventListener(
+    "pointerdown",
+    (e) => {
+      px = e.clientX;
+      py = e.clientY;
+      moved = false;
+    },
+    { passive: true },
+  );
+  el.addEventListener(
+    "pointermove",
+    (e) => {
+      if (Math.abs(e.clientX - px) + Math.abs(e.clientY - py) > 10) moved = true;
+    },
+    { passive: true },
+  );
+  el.addEventListener("pointerup", (e) => {
+    if (moved) return;
+    if (Math.abs(e.clientX - px) + Math.abs(e.clientY - py) > 10) return;
+    onTap();
   });
-  mount.appendChild(strip);
-  return list.length
-    ? { platform: "fallback", slides: list, index: 0, title: "" }
-    : null;
+  el.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      onTap();
+    }
+  });
 }
 
 function appendSlideMedia(parent, slide, onOpen, zoomable) {
   if (!slide?.url) return;
+  const wrap = document.createElement("div");
+  wrap.className = zoomable ? "carousel-slide zoom-hit" : "carousel-slide plain-media";
+  if (zoomable) {
+    wrap.setAttribute("role", "button");
+    wrap.tabIndex = 0;
+    wrap.setAttribute("aria-label", "Open full screen");
+  }
+
   const isVideo = /\.(mp4|mov|webm)(\?|$)/i.test(slide.url);
   if (isVideo) {
     const v = document.createElement("video");
@@ -213,22 +280,51 @@ function appendSlideMedia(parent, slide, onOpen, zoomable) {
     v.controls = true;
     v.playsInline = true;
     v.className = "preview-video";
-    parent.appendChild(v);
-    return;
+    wrap.appendChild(v);
+  } else {
+    const img = document.createElement("img");
+    img.src = slide.url;
+    img.alt = slide.label ?? "Preview";
+    img.loading = "lazy";
+    img.draggable = false;
+    wrap.appendChild(img);
   }
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = zoomable ? "zoom-hit" : "plain-media";
-  btn.setAttribute("aria-label", "Open platform preview");
-  const img = document.createElement("img");
-  img.src = slide.url;
-  img.alt = slide.label ?? "Preview";
-  img.loading = "lazy";
-  btn.appendChild(img);
-  if (zoomable) {
-    btn.addEventListener("click", () => onOpen());
+
+  if (zoomable && onOpen) bindTapUnlessScroll(wrap, onOpen);
+  parent.appendChild(wrap);
+}
+
+function scrollCarouselToIndex(track, index) {
+  const el = track.children[index];
+  if (!el) return;
+  el.scrollIntoView({ inline: "center", block: "nearest", behavior: "auto" });
+}
+
+function renderLightboxScrollCarousel(container, slides, startIndex) {
+  container.innerHTML = "";
+  const list = slides.filter((s) => s?.url && !s.embed);
+  if (!list.length) return false;
+
+  const track = document.createElement("div");
+  track.className = "carousel lightbox-media-carousel";
+  list.forEach((slide) => appendSlideMedia(track, slide, null, false));
+  container.appendChild(track);
+
+  let idx = 0;
+  const target = slides[startIndex];
+  if (target) {
+    const found = list.indexOf(target);
+    if (found >= 0) idx = found;
   }
-  parent.appendChild(btn);
+  idx = Math.min(Math.max(idx, 0), list.length - 1);
+  const align = () => scrollCarouselToIndex(track, idx);
+  requestAnimationFrame(align);
+  track.querySelectorAll("img").forEach((img) => {
+    if (img.complete) return;
+    img.addEventListener("load", align, { once: true });
+  });
+  setTimeout(align, 150);
+  return true;
 }
 
 function loadInstagramEmbedScript() {
@@ -466,7 +562,12 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
         syncSlide();
         if (reviewSlot?.el) slot.appendChild(reviewSlot.el);
       } else {
-        renderMediaStage(fallbackStage, ctx.slides[ctx.index], "fallback");
+        const scrolled =
+          renderLightboxScrollCarousel(fallbackStage, ctx.slides, ctx.index) ||
+          false;
+        if (!scrolled) {
+          renderMediaStage(fallbackStage, ctx.slides[ctx.index], "fallback");
+        }
       }
 
       el.hidden = false;
