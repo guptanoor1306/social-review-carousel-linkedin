@@ -30,6 +30,10 @@ app.get("/review/:batchId", (_req, res) => {
   res.sendFile(path.join(publicDir, "review.html"));
 });
 
+app.get("/health", (_req, res) => {
+  res.status(200).json({ ok: true });
+});
+
 app.get("/", (_req, res) => {
   res.sendFile(path.join(publicDir, "admin.html"));
 });
@@ -48,13 +52,16 @@ bolt.error(async (error) => {
 });
 
 async function main() {
-  await initDb();
-  await bolt.start();
-  app.listen(config.port, () => {
+  app.listen(config.port, "0.0.0.0", () => {
+    console.log(`Listening on 0.0.0.0:${config.port}`);
     console.log(`Web admin: ${config.publicBaseUrl}/`);
-    console.log(`Database: ${config.databaseUrl ? "PostgreSQL" : "SQLite"}`);
-    console.log("Slack bot running (Socket Mode)");
   });
+
+  await initDb();
+  console.log(`Database: ${config.databaseUrl ? "PostgreSQL" : "SQLite"}`);
+
+  await bolt.start();
+  console.log("Slack bot running (Socket Mode)");
 }
 
 main().catch((err) => {
