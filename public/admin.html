@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Social Review Admin</title>
+    <link rel="stylesheet" href="/styles.css?v=9" />
+  </head>
+  <body class="admin-page">
+    <div id="loginView" class="login-wrap">
+      <div class="card login-card">
+        <div class="brand">Social <span>Review</span></div>
+        <p class="sub">Admin sign in</p>
+        <label for="loginUser">Username</label>
+        <input id="loginUser" autocomplete="username" />
+        <label for="loginPass">Password</label>
+        <input id="loginPass" type="password" autocomplete="current-password" />
+        <button class="btn block" id="loginBtn" type="button" style="margin-top: 16px">
+          Sign in
+        </button>
+      </div>
+    </div>
+
+    <div id="appView" class="admin-app" hidden>
+      <header class="admin-header">
+        <div class="brand">Social <span>Review</span> · Admin</div>
+        <button class="btn secondary" id="logoutBtn" type="button">Log out</button>
+      </header>
+
+      <div class="admin-layout">
+        <aside class="admin-aside">
+          <section class="card admin-card-compact">
+            <h2>New batch</h2>
+            <label for="name">Name</label>
+            <input id="name" placeholder="March Instagram — Carousels" />
+            <div class="row">
+              <div>
+                <label for="platform">Platform</label>
+                <select id="platform">
+                  <option value="instagram">Instagram</option>
+                  <option value="linkedin">LinkedIn</option>
+                </select>
+              </div>
+              <div>
+                <label for="assetType">Format</label>
+                <select id="assetType"></select>
+              </div>
+            </div>
+            <label for="channelId">Slack channel ID</label>
+            <input id="channelId" placeholder="C0123456789" />
+            <button class="btn block" id="createBatch" type="button" style="margin-top: 12px">
+              Create batch
+            </button>
+          </section>
+
+          <section class="card admin-card-compact">
+            <h2>Batches</h2>
+            <div id="batchList" class="sub admin-batch-list">Loading…</div>
+          </section>
+        </aside>
+
+        <main class="admin-main">
+          <div id="batchEmpty" class="admin-empty card">
+            <h2>Select a batch</h2>
+            <p class="sub" style="margin: 0">
+              Create a new batch on the left, or open an existing one to upload assets and notify Slack.
+            </p>
+          </div>
+
+          <section class="card" id="batchPanel" hidden>
+            <div class="admin-steps">
+              <span class="admin-step active">1 · Batch</span>
+              <span class="admin-step">2 · Assets</span>
+              <span class="admin-step">3 · Slack</span>
+            </div>
+            <div class="topbar" style="margin: 0 0 8px">
+              <h2 id="batchTitle" style="margin: 0">Batch</h2>
+              <span class="pill" id="batchStatus">draft</span>
+            </div>
+            <p class="sub">Review link (share or use Notify Slack):</p>
+            <div class="link-box" id="reviewLink"></div>
+
+            <h2 style="margin-top: 20px">Add assets</h2>
+            <div class="seg" id="modeSeg">
+              <button type="button" data-mode="upload" class="active">Upload files</button>
+              <button type="button" data-mode="link">Paste link</button>
+            </div>
+
+            <label for="assetTitle">Title (optional)</label>
+            <input id="assetTitle" placeholder="e.g. Product launch carousel v2" />
+
+            <div id="uploadFields">
+              <label>Files (up to 10)</label>
+              <div class="drop">
+                <input id="files" type="file" multiple accept="image/*,video/*" />
+                <p class="sub" style="margin: 8px 0 0">Carousel slides, reels, posts, stories.</p>
+              </div>
+            </div>
+
+            <div id="linkFields" hidden>
+              <label for="linkUrl">Asset link</label>
+              <input id="linkUrl" placeholder="https://…" />
+            </div>
+
+            <button class="btn block" id="addAsset" type="button" style="margin-top: 12px">
+              Add to batch
+            </button>
+
+            <div class="asset-list" id="assetList"></div>
+
+            <div class="admin-actions-row">
+              <button class="btn secondary" id="notifySlack" type="button">Notify Slack</button>
+              <button class="btn" id="summarySlack" type="button">Post summary</button>
+              <button class="btn danger" id="deleteBatch" type="button">Delete batch</button>
+            </div>
+
+            <p class="sub" id="reviewerList" style="margin-top: 12px"></p>
+          </section>
+        </main>
+      </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="/admin.js?v=9" type="module"></script>
+  </body>
+</html>

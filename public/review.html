@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Review</title>
+    <link rel="stylesheet" href="/styles.css?v=9" />
+  </head>
+  <body class="review-page">
+    <section class="card review-card review-welcome" id="welcomeCard">
+      <div class="brand review-brand">Social <span>Review</span></div>
+      <h2 style="margin: 12px 0 4px">Review creative</h2>
+      <p class="sub" id="welcomeMeta" style="margin-bottom: 20px"></p>
+      <label for="reviewerName">Your name</label>
+      <input
+        id="reviewerName"
+        autocomplete="name"
+        placeholder="So the team knows who reviewed"
+      />
+      <button class="btn block review-cta" id="startReview" type="button" style="margin-top: 16px">
+        Start review →
+      </button>
+    </section>
+
+    <div id="reviewFlow" class="review-shell" hidden>
+      <section class="card review-card" id="assetCard" hidden>
+        <h2 id="assetTitle"></h2>
+        <p class="sub" id="assetLink"></p>
+        <div class="preview-platform-row" id="previewPlatformRow" hidden>
+          <img id="previewPlatformLogo" alt="" width="24" height="24" />
+          <span id="previewPlatformMeta"></span>
+        </div>
+        <div id="previewMount"></div>
+
+        <div id="reviewFormBlock" class="review-actions">
+          <div class="review-form-head">
+            <div class="review-form-head-row">
+              <span class="sub" id="formBatchMeta"></span>
+              <span class="pill review-pill" id="assetCounter">0/0</span>
+            </div>
+            <div class="bar review-bar"><span id="barFill"></span></div>
+          </div>
+          <p class="sub review-section-label">Rating</p>
+          <div class="stars stars-touch" id="stars"></div>
+          <label for="feedback">Feedback (optional)</label>
+          <textarea id="feedback" placeholder="What works? What should change?"></textarea>
+          <div class="review-cta-row">
+            <button class="btn review-cta" id="saveNext" type="button" disabled>
+              Save &amp; next
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section class="card review-card" id="doneCard" hidden>
+        <h2>All done</h2>
+        <p class="sub" id="doneText"></p>
+      </section>
+    </div>
+
+    <div class="toast" id="toast"></div>
+    <script src="/review.js?v=9" type="module"></script>
+  </body>
+</html>

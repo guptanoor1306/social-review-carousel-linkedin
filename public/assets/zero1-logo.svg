@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Zero1 by Zerodha">
+  <rect width="120" height="120" rx="60" fill="#ffffff"/>
+  <text x="60" y="52" text-anchor="middle" font-family="Arial Black, Arial, sans-serif" font-size="26" font-weight="900" fill="#111111">ZERO1</text>
+  <path d="M88 38 L96 46 L88 54 L84 50 L88 46 Z" fill="#FACC15"/>
+  <text x="60" y="78" text-anchor="middle" font-family="Arial, sans-serif" font-size="11" font-weight="600" fill="#666666" letter-spacing="0.08em">by ZERODHA</text>
+</svg>
