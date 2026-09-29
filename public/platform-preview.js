@@ -61,8 +61,41 @@ function appendLinkedInGridCell(grid, slide, index, extraCount, onSelect) {
     cell.appendChild(overlay);
   }
 
+  cell.title = "Click to view full image";
   cell.addEventListener("click", () => onSelect?.(index));
   grid.appendChild(cell);
+}
+
+function renderLinkedInFocusCarousel(container, slides, startIndex) {
+  container.innerHTML = "";
+  const list = slideList(slides);
+  if (!list.length) return null;
+
+  const toolbar = document.createElement("div");
+  toolbar.className = "li-focus-toolbar";
+  const backBtn = document.createElement("button");
+  backBtn.type = "button";
+  backBtn.className = "li-focus-back";
+  backBtn.textContent = "← Overview";
+  toolbar.appendChild(backBtn);
+
+  const track = document.createElement("div");
+  track.className = "carousel lightbox-media-carousel li-focus-carousel";
+  list.forEach((slide) => appendSlideMedia(track, slide, null, false));
+
+  container.appendChild(toolbar);
+  container.appendChild(track);
+
+  const idx = Math.min(Math.max(startIndex, 0), list.length - 1);
+  const align = () => scrollCarouselToIndex(track, idx);
+  requestAnimationFrame(align);
+  track.querySelectorAll("img").forEach((img) => {
+    if (img.complete) return;
+    img.addEventListener("load", align, { once: true });
+  });
+  setTimeout(align, 80);
+
+  return { track, backBtn };
 }
 
 /** LinkedIn desktop feed-style multi-image grid (caption should sit above this). */
@@ -123,7 +156,9 @@ function renderLinkedInFeedPreview(mount, list, title, openFullscreen, payload) 
   wrap.appendChild(caption);
 
   const grid = buildLinkedInMediaGrid(list, (index) =>
-    openPreviewFromStrip(openFullscreen, payload, list, index, title),
+    openPreviewFromStrip(openFullscreen, payload, list, index, title, {
+      linkedinFocus: true,
+    }),
   );
   wrap.appendChild(grid);
 
@@ -251,7 +286,7 @@ function platformLabel(platform) {
   return platform === "linkedin" ? "LinkedIn" : "Instagram";
 }
 
-function openPreviewFromStrip(openFullscreen, payload, list, index, title) {
+function openPreviewFromStrip(openFullscreen, payload, list, index, title, opts = {}) {
   if (isMobileReview()) {
     const media = toMediaOnlyPayload({ ...payload, slides: list, index, title });
     if (media) {
@@ -261,7 +296,13 @@ function openPreviewFromStrip(openFullscreen, payload, list, index, title) {
     return;
   }
   if (payload && payload.platform !== "fallback") {
-    openFullscreen({ ...payload, slides: list, index, title });
+    openFullscreen({
+      ...payload,
+      slides: list,
+      index,
+      title,
+      linkedinFocus: Boolean(opts.linkedinFocus),
+    });
     return;
   }
   openFullscreen({
@@ -608,6 +649,7 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
   const brandMark = el.querySelector(".platform-brand-mark");
   const brandMarkLogo = el.querySelector(".platform-brand-mark-logo");
   let ctx = { slides: [], index: 0, platform: "instagram" };
+  let liViewMode = "overview";
 
   function applyPlatformBranding(platform) {
     const pLabel = platformLabel(platform);
@@ -619,6 +661,37 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
     brandMarkLogo.alt = pLabel;
   }
 
+  const renderLinkedInDesktopMedia = () => {
+    stage.innerHTML = "";
+    stage.classList.add("li-modal-stage--grid");
+    mediaCol.classList.add("li-modal-media--feed");
+    el.classList.add("is-li-desktop");
+    liCaptionTop.hidden = false;
+    liCaptionTop.textContent = captionEl.textContent;
+    captionEl.hidden = true;
+    prevBtn.hidden = true;
+    nextBtn.hidden = true;
+
+    if (liViewMode === "focus") {
+      stage.classList.add("li-modal-stage--focus");
+      const focus = renderLinkedInFocusCarousel(stage, ctx.slides, ctx.index);
+      focus?.backBtn.addEventListener("click", () => {
+        liViewMode = "overview";
+        renderLinkedInDesktopMedia();
+      });
+      return;
+    }
+
+    stage.classList.remove("li-modal-stage--focus");
+    stage.appendChild(
+      buildLinkedInMediaGrid(ctx.slides, (index) => {
+        ctx.index = index;
+        liViewMode = "focus";
+        renderLinkedInDesktopMedia();
+      }),
+    );
+  };
+
   const syncSlide = () => {
     const slide = ctx.slides[ctx.index];
     const liDesktop =
@@ -628,24 +701,12 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
       !ctx.slides.some((s) => s.embed);
 
     if (liDesktop) {
-      stage.innerHTML = "";
-      stage.classList.add("li-modal-stage--grid");
-      mediaCol.classList.add("li-modal-media--feed");
-      el.classList.add("is-li-desktop");
-      liCaptionTop.hidden = false;
-      liCaptionTop.textContent = captionEl.textContent;
-      captionEl.hidden = true;
-      stage.appendChild(
-        buildLinkedInMediaGrid(ctx.slides, (index) => {
-          ctx.index = index;
-        }),
-      );
-      prevBtn.hidden = true;
-      nextBtn.hidden = true;
+      renderLinkedInDesktopMedia();
       return;
     }
 
-    stage.classList.remove("li-modal-stage--grid");
+    liViewMode = "overview";
+    stage.classList.remove("li-modal-stage--grid", "li-modal-stage--focus");
     mediaCol.classList.remove("li-modal-media--feed");
     el.classList.remove("is-li-desktop");
     liCaptionTop.hidden = true;
@@ -676,11 +737,12 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
     el.hidden = true;
     el.classList.remove("is-linkedin", "is-instagram", "is-fallback", "is-media-only");
     stage.innerHTML = "";
-    stage.classList.remove("li-modal-stage--grid");
+    stage.classList.remove("li-modal-stage--grid", "li-modal-stage--focus");
     mediaCol.classList.remove("li-modal-media--feed");
     el.classList.remove("is-li-desktop");
     liCaptionTop.hidden = true;
     captionEl.hidden = false;
+    liViewMode = "overview";
     fallbackStage.innerHTML = "";
     document.body.classList.remove("lightbox-open");
     if (reviewSlot?.el && slot.contains(reviewSlot.el) && reviewSlot.home) {
@@ -692,7 +754,18 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
   el.querySelector(".lightbox-close").addEventListener("click", close);
   document.addEventListener("keydown", (e) => {
     if (el.hidden) return;
-    if (e.key === "Escape") close();
+    if (e.key === "Escape") {
+      if (
+        liViewMode === "focus" &&
+        ctx.platform === "linkedin" &&
+        isDesktopReview()
+      ) {
+        liViewMode = "overview";
+        renderLinkedInDesktopMedia();
+        return;
+      }
+      close();
+    }
     if (e.key === "ArrowLeft" && !prevBtn.hidden) prevBtn.click();
     if (e.key === "ArrowRight" && !nextBtn.hidden) nextBtn.click();
   });
@@ -711,6 +784,12 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
         index,
         platform,
       };
+      liViewMode =
+        platform === "linkedin" &&
+        isDesktopReview() &&
+        payload.linkedinFocus
+          ? "focus"
+          : "overview";
       if (!ctx.slides.length) return;
 
       const brand = platform === "linkedin" ? ZERO1.linkedin : ZERO1.instagram;

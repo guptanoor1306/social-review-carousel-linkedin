@@ -1354,31 +1354,29 @@ body.lightbox-open {
 
 .li-grid--2 {
   grid-template-columns: 1fr 1fr;
-  min-height: 220px;
 }
 
 .li-grid--3 {
   grid-template-columns: 2fr 1fr;
-  grid-template-rows: 1fr 1fr;
-  min-height: 280px;
-  max-height: min(48vh, 420px);
+  grid-template-rows: auto auto;
 }
 
 .li-grid--multi {
   grid-template-columns: 2fr 1fr;
-  grid-template-rows: repeat(3, 1fr);
-  min-height: 320px;
-  max-height: min(52vh, 480px);
+  grid-template-rows: auto auto auto;
 }
 
 .li-grid-cell {
   position: relative;
   padding: 0;
   border: 0;
-  background: #000;
+  background: #f3f2ef;
   cursor: pointer;
   overflow: hidden;
   min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .li-grid-cell--hero {
@@ -1388,17 +1386,64 @@ body.lightbox-open {
 .li-grid-cell img,
 .li-grid-cell video {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
+  height: auto;
+  max-height: min(34vh, 300px);
+  object-fit: contain;
   display: block;
-  min-height: 100px;
+  background: #f3f2ef;
 }
 
 .li-grid--1 .li-grid-cell img,
 .li-grid--1 .li-grid-cell video {
   max-height: min(48vh, 420px);
+}
+
+#lightbox.is-linkedin .ig-modal-stage.li-modal-stage--focus {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+}
+
+.li-focus-toolbar {
+  flex-shrink: 0;
+  padding: 8px 12px 4px;
+  background: #fff;
+}
+
+.li-focus-back {
+  border: 0;
+  background: transparent;
+  color: #0a66c2;
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 0;
+}
+
+#lightbox.is-linkedin .li-focus-carousel {
+  flex: 1;
+  min-height: 0;
+  margin: 0;
+  padding: 8px 0 16px;
+  max-height: none;
+}
+
+#lightbox.is-linkedin .li-focus-carousel .carousel-slide {
+  flex: 0 0 min(92%, 720px);
+}
+
+#lightbox.is-linkedin .li-focus-carousel img,
+#lightbox.is-linkedin .li-focus-carousel video {
+  width: auto;
+  max-width: 100%;
+  max-height: min(calc(92vh - 220px), 680px);
+  height: auto;
   object-fit: contain;
+  margin: 0 auto;
   background: #f3f2ef;
+  border-radius: 4px;
 }
 
 .li-grid-more {
