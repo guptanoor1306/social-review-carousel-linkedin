@@ -172,6 +172,7 @@ function renderHorizontalSlideStrip(mount, list, openFullscreen, payload, title)
     );
   });
   wrap.appendChild(strip);
+  lockCarouselAtStart(strip);
 
   if (payload?.platform && payload.platform !== "fallback") {
     const cta = document.createElement("button");
@@ -295,9 +296,28 @@ function appendSlideMedia(parent, slide, onOpen, zoomable) {
 }
 
 function scrollCarouselToIndex(track, index) {
-  const el = track.children[index];
-  if (!el) return;
-  el.scrollIntoView({ inline: "center", block: "nearest", behavior: "auto" });
+  if (!track?.children?.length) return;
+  const i = Math.min(Math.max(index, 0), track.children.length - 1);
+  const el = track.children[i];
+  if (i === 0) {
+    track.scrollLeft = 0;
+    return;
+  }
+  track.scrollLeft = Math.max(0, el.offsetLeft);
+}
+
+function lockCarouselAtStart(track) {
+  if (!track) return;
+  const snap = () => {
+    track.scrollLeft = 0;
+  };
+  requestAnimationFrame(snap);
+  track.querySelectorAll("img").forEach((img) => {
+    if (img.complete) return;
+    img.addEventListener("load", snap, { once: true });
+  });
+  setTimeout(snap, 80);
+  setTimeout(snap, 250);
 }
 
 function renderLightboxScrollCarousel(container, slides, startIndex) {
@@ -323,7 +343,8 @@ function renderLightboxScrollCarousel(container, slides, startIndex) {
     if (img.complete) return;
     img.addEventListener("load", align, { once: true });
   });
-  setTimeout(align, 150);
+  setTimeout(align, 80);
+  setTimeout(align, 250);
   return true;
 }
 

@@ -510,7 +510,13 @@ body.review-page .progress {
 .carousel .zoom-hit,
 .carousel .plain-media {
   flex: 0 0 auto;
-  scroll-snap-align: center;
+  scroll-snap-align: start;
+}
+
+.carousel.preview-carousel .carousel-slide,
+.lightbox-media-carousel .carousel-slide {
+  scroll-snap-align: start;
+  scroll-snap-stop: normal;
 }
 
 .carousel img,
@@ -1543,7 +1549,7 @@ body.lightbox-open {
     display: flex;
     align-items: center;
     justify-content: center;
-    scroll-snap-align: center;
+    scroll-snap-align: start;
     padding: 0 12px;
     box-sizing: border-box;
   }
@@ -1568,7 +1574,7 @@ body.lightbox-open {
 
 .lightbox-media-carousel .carousel-slide {
   flex: 0 0 min(88vw, 720px);
-  scroll-snap-align: center;
+  scroll-snap-align: start;
   display: flex;
   align-items: center;
   justify-content: center;
