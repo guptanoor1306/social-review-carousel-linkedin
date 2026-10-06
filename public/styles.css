@@ -1822,9 +1822,9 @@ body.lightbox-open {
   object-fit: contain;
 }
 
-/* Admin — desktop workspace */
+/* Admin */
 body.admin-page {
-  min-width: 1024px;
+  min-width: 720px;
 }
 
 .admin-app {
@@ -1835,86 +1835,182 @@ body.admin-page {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  max-width: 1280px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 16px 24px;
 }
 
-.admin-layout {
-  display: grid;
-  grid-template-columns: 320px minmax(0, 1fr);
-  gap: 20px;
-  max-width: 1280px;
+.admin-shell {
+  max-width: 960px;
   margin: 0 auto;
-  padding: 0 24px 48px;
+  padding: 0 24px 40px;
+}
+
+.admin-home-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
   align-items: start;
 }
 
-.admin-aside {
-  position: sticky;
-  top: 12px;
+@media (max-width: 900px) {
+  body.admin-page {
+    min-width: 0;
+  }
+
+  .admin-home-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.admin-card-compact {
-  margin-bottom: 16px;
+.admin-create-card h2,
+.admin-list-card h2 {
+  margin: 0 0 4px;
+  font-size: 1.05rem;
 }
 
-.admin-card-compact h2 {
-  font-size: 0.95rem;
+.admin-batch-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
 }
 
-.admin-batch-list .asset-item {
-  margin-bottom: 8px;
+.batch-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.admin-main {
+.batch-list-row:hover {
+  border-color: var(--brand);
+  box-shadow: 0 2px 12px rgba(91, 79, 255, 0.08);
+}
+
+.batch-list-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
   min-width: 0;
 }
 
-.admin-empty {
-  text-align: center;
-  padding: 48px 32px;
-}
-
-.admin-steps {
+.batch-list-main strong {
   display: flex;
+  align-items: center;
   gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 16px;
 }
 
-.admin-step {
-  font-size: 0.78rem;
-  font-weight: 600;
+.batch-list-chevron {
   color: var(--muted);
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: var(--bg);
-  border: 1px solid var(--line);
+  font-weight: 700;
+  flex-shrink: 0;
 }
 
-.admin-step.active {
+.admin-detail {
+  padding-top: 12px;
+}
+
+.admin-breadcrumb {
+  margin-bottom: 12px;
+}
+
+.admin-back {
+  border: 0;
+  background: transparent;
   color: var(--brand);
-  border-color: var(--brand-soft);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0;
+}
+
+.admin-back:hover {
+  text-decoration: underline;
+}
+
+.batch-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding-bottom: 16px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.batch-detail-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.batch-detail-title h2 {
+  margin: 0;
+  font-size: 1.25rem;
+}
+
+.batch-detail-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.batch-action-divider {
+  width: 1px;
+  height: 28px;
+  background: var(--line);
+  margin: 0 4px;
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.icon-btn:hover {
+  border-color: var(--brand);
+  color: var(--brand);
   background: var(--brand-soft);
 }
 
-.admin-actions-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 20px;
+.admin-uploaded {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
 }
 
-.admin-actions-row .btn {
-  flex: 0 1 auto;
-  min-width: 0;
+.admin-uploaded-title {
+  margin: 0 0 12px;
+  font-size: 0.95rem;
+  font-weight: 700;
 }
 
 .admin-asset-form {
-  margin-top: 16px;
-  padding-top: 16px;
-  border-top: 1px solid var(--line);
+  margin-top: 8px;
 }
 
 .admin-asset-form h2 {

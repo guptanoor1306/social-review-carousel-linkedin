@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Social Review Admin</title>
-    <link rel="stylesheet" href="/styles.css?v=16" />
+    <link rel="stylesheet" href="/styles.css?v=17" />
   </head>
   <body class="admin-page">
     <div id="loginView" class="login-wrap">
@@ -24,124 +24,150 @@
     <div id="appView" class="admin-app" hidden>
       <header class="admin-header">
         <div class="brand">Social <span>Review</span> · Admin</div>
-        <button class="btn secondary" id="logoutBtn" type="button">Log out</button>
+        <button class="btn secondary btn-sm" id="logoutBtn" type="button">Log out</button>
       </header>
 
-      <div class="admin-layout">
-        <aside class="admin-aside">
-          <section class="card admin-card-compact">
-            <h2>New batch</h2>
-            <label for="name">Name</label>
-            <input id="name" placeholder="March Instagram — Carousels" />
-            <div class="row">
-              <div>
-                <label for="platform">Platform</label>
-                <select id="platform">
-                  <option value="instagram">Instagram</option>
-                  <option value="linkedin">LinkedIn</option>
-                </select>
+      <div class="admin-shell">
+        <section id="adminHome" class="admin-home">
+          <div class="admin-home-grid">
+            <div class="card admin-create-card">
+              <h2>Create a batch</h2>
+              <p class="sub admin-form-hint">Step 1 — set up the review batch, then open it to upload files.</p>
+              <label for="name">Name</label>
+              <input id="name" placeholder="March Instagram — Carousels" />
+              <div class="row">
+                <div>
+                  <label for="platform">Platform</label>
+                  <select id="platform">
+                    <option value="instagram">Instagram</option>
+                    <option value="linkedin">LinkedIn</option>
+                  </select>
+                </div>
+                <div>
+                  <label for="assetType">Format</label>
+                  <select id="assetType"></select>
+                </div>
               </div>
-              <div>
-                <label for="assetType">Format</label>
-                <select id="assetType"></select>
-              </div>
+              <label for="channelId">Slack channel ID</label>
+              <input id="channelId" placeholder="C0123456789" />
+              <button class="btn btn-sm" id="createBatch" type="button" style="margin-top: 12px">
+                Create batch
+              </button>
             </div>
-            <label for="channelId">Slack channel ID</label>
-            <input id="channelId" placeholder="C0123456789" />
-            <button class="btn btn-sm" id="createBatch" type="button" style="margin-top: 12px">
-              Create batch
-            </button>
-          </section>
 
-          <section class="card admin-card-compact">
-            <h2>Batches</h2>
-            <div id="batchList" class="sub admin-batch-list">Loading…</div>
-          </section>
-        </aside>
-
-        <main class="admin-main">
-          <div id="batchEmpty" class="admin-empty card">
-            <h2>Select a batch</h2>
-            <p class="sub" style="margin: 0">
-              Create a new batch on the left, or open an existing one to upload assets and notify Slack.
-            </p>
+            <div class="card admin-list-card">
+              <h2>Your batches</h2>
+              <div id="batchList" class="admin-batch-list">Loading…</div>
+            </div>
           </div>
+        </section>
 
-          <section class="card" id="batchPanel" hidden>
-            <div class="admin-steps">
-              <span class="admin-step active">1 · Batch</span>
-              <span class="admin-step">2 · Assets</span>
-              <span class="admin-step">3 · Slack</span>
-            </div>
-            <div class="topbar" style="margin: 0 0 8px">
-              <h2 id="batchTitle" style="margin: 0">Batch</h2>
+        <section class="card admin-detail" id="batchPanel" hidden>
+          <nav class="admin-breadcrumb">
+            <button type="button" class="admin-back" id="backToBatches">← Batches</button>
+          </nav>
+
+          <header class="batch-detail-header">
+            <div class="batch-detail-title">
+              <h2 id="batchTitle">Batch</h2>
               <span class="pill" id="batchStatus">draft</span>
             </div>
-            <p class="sub">Review link (share or use Notify Slack):</p>
-            <div class="link-box" id="reviewLink"></div>
-
-            <div class="admin-asset-form">
-              <h2>Add assets</h2>
-              <p class="sub admin-form-hint">
-                Set the post caption first, then upload slides. Each slide can have its own caption below.
-              </p>
-
-              <div class="seg" id="modeSeg">
-                <button type="button" data-mode="upload" class="active">Upload files</button>
-                <button type="button" data-mode="link">Paste link</button>
-              </div>
-
-              <div class="admin-field-block">
-                <label for="assetTitleEditor">Post caption / title</label>
-                <div class="rich-toolbar" id="assetTitleToolbar">
-                  <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
-                  <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
-                  <button type="button" data-cmd="insertLineBreak" title="Line break">↵</button>
-                </div>
-                <div
-                  id="assetTitleEditor"
-                  class="rich-editor"
-                  contenteditable="true"
-                  data-placeholder="Write the post caption — bold, italics, and line breaks supported."
-                ></div>
-              </div>
-
-              <div id="uploadFields" class="admin-field-block">
-                <label>Files (up to 10)</label>
-                <div class="drop drop-compact">
-                  <input id="files" type="file" multiple accept="image/*,video/*" />
-                  <p class="sub" style="margin: 8px 0 0">Carousel slides, reels, posts, stories.</p>
-                </div>
-                <div class="upload-preview" id="uploadPreview" hidden></div>
-                <div id="slideCaptionsPanel" class="slide-captions-panel" hidden>
-                  <label class="slide-captions-label">Caption per slide (optional)</label>
-                  <div id="slideCaptionsList" class="slide-captions-list"></div>
-                </div>
-              </div>
-
-              <div id="linkFields" class="admin-field-block" hidden>
-                <label for="linkUrl">Asset link</label>
-                <input id="linkUrl" placeholder="https://…" />
-              </div>
-
-              <button class="btn btn-sm" id="addAsset" type="button">Add to batch</button>
-            </div>
-
-            <div class="asset-list" id="assetList"></div>
-
-            <div class="admin-actions-row">
+            <div class="batch-detail-actions">
+              <button
+                type="button"
+                class="icon-btn"
+                id="reviewLinkOpen"
+                title="Open review link"
+                aria-label="Open review link"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path
+                    d="M10 13a5 5 0 0 1 7.07 0l1.41 1.41a5 5 0 0 1-7.07 7.07L10 20"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                  <path
+                    d="M14 11a5 5 0 0 1-7.07 0L5.52 9.59a5 5 0 0 1 7.07-7.07L14 4"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                    stroke-linecap="round"
+                  />
+                </svg>
+              </button>
+              <button
+                type="button"
+                class="icon-btn"
+                id="reviewLinkCopy"
+                title="Copy review link"
+                aria-label="Copy review link"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.8" />
+                  <path
+                    d="M7 15H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h7a2 2 0 0 1 2 2v1"
+                    stroke="currentColor"
+                    stroke-width="1.8"
+                  />
+                </svg>
+              </button>
+              <span class="batch-action-divider" aria-hidden="true"></span>
               <button class="btn btn-sm secondary" id="notifySlack" type="button">Notify Slack</button>
               <button class="btn btn-sm" id="summarySlack" type="button">Post summary</button>
-              <button class="btn btn-sm danger" id="deleteBatch" type="button">Delete batch</button>
+              <button class="btn btn-sm danger" id="deleteBatch" type="button">Delete</button>
+            </div>
+          </header>
+
+          <p class="sub" id="reviewerList"></p>
+
+          <div class="admin-asset-form">
+            <h2>Upload files</h2>
+            <p class="sub admin-form-hint">
+              Add the post caption, then upload slides. Each slide can have its own caption below.
+            </p>
+
+            <div class="admin-field-block">
+              <label for="assetTitleEditor">Post caption / title</label>
+              <div class="rich-toolbar" id="assetTitleToolbar">
+                <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+                <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+                <button type="button" data-cmd="insertLineBreak" title="Line break">↵</button>
+              </div>
+              <div
+                id="assetTitleEditor"
+                class="rich-editor"
+                contenteditable="true"
+                data-placeholder="Write the post caption — bold, italics, and line breaks supported."
+              ></div>
             </div>
 
-            <p class="sub" id="reviewerList" style="margin-top: 12px"></p>
-          </section>
-        </main>
+            <div class="admin-field-block">
+              <label>Files (up to 10)</label>
+              <div class="drop drop-compact">
+                <input id="files" type="file" multiple accept="image/*,video/*" />
+                <p class="sub" style="margin: 8px 0 0">Carousel slides, reels, posts, stories.</p>
+              </div>
+              <div class="upload-preview" id="uploadPreview" hidden></div>
+              <div id="slideCaptionsPanel" class="slide-captions-panel" hidden>
+                <label class="slide-captions-label">Caption per slide (optional)</label>
+                <div id="slideCaptionsList" class="slide-captions-list"></div>
+              </div>
+            </div>
+
+            <button class="btn btn-sm" id="addAsset" type="button">Add to batch</button>
+          </div>
+
+          <div class="admin-uploaded">
+            <h3 class="admin-uploaded-title">In this batch</h3>
+            <div class="asset-list" id="assetList"></div>
+          </div>
+        </section>
       </div>
     </div>
 
+    <input type="hidden" id="reviewLink" value="" />
+
     <div class="toast" id="toast"></div>
-    <script src="/admin.js?v=16" type="module"></script>
+    <script src="/admin.js?v=17" type="module"></script>
   </body>
 </html>

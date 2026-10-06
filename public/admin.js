@@ -7,7 +7,6 @@ import {
 
 const $ = (id) => document.getElementById(id);
 let activeBatchId = null;
-let uploadMode = "upload";
 
 const platformTypes = {
   instagram: ["carousel", "reel", "post", "story"],
@@ -139,16 +138,6 @@ function syncAssetTypes() {
 $("platform").addEventListener("change", syncAssetTypes);
 syncAssetTypes();
 
-$("modeSeg").addEventListener("click", (e) => {
-  const btn = e.target.closest("button[data-mode]");
-  if (!btn) return;
-  uploadMode = btn.dataset.mode;
-  $("modeSeg").querySelectorAll("button").forEach((b) => b.classList.remove("active"));
-  btn.classList.add("active");
-  $("uploadFields").hidden = uploadMode !== "upload";
-  $("linkFields").hidden = uploadMode !== "link";
-});
-
 async function ensureAuth() {
   const res = await api("/auth/me");
   if (res.ok) {
@@ -225,14 +214,14 @@ async function loadBatches() {
   }
   root.innerHTML = data.batches
     .map(
-      (b) => `<div class="asset-item">
-        <div>
-          <strong>${b.name}</strong>
-          <span class="pill ${b.status}">${b.status}</span><br/>
+      (b) => `<button type="button" class="batch-list-row" data-open="${b.id}">
+        <span class="batch-list-main">
+          <strong>${escapeHtml(b.name)}</strong>
+          <span class="pill ${b.status}">${b.status}</span>
           <small>${b.platform} · ${b.assetType} · ${b.assetCount} assets · ${b.reviewerCount} reviewers</small>
-        </div>
-        <button class="btn secondary" data-open="${b.id}" type="button">Open</button>
-      </div>`,
+        </span>
+        <span class="batch-list-chevron" aria-hidden="true">→</span>
+      </button>`,
     )
     .join("");
   root.querySelectorAll("[data-open]").forEach((btn) => {
@@ -240,22 +229,28 @@ async function loadBatches() {
   });
 }
 
-function syncBatchPanelVisibility() {
-  const open = Boolean(activeBatchId);
-  $("batchPanel").hidden = !open;
-  $("batchEmpty").hidden = open;
+function showAdminHome() {
+  activeBatchId = null;
+  $("adminHome").hidden = false;
+  $("batchPanel").hidden = true;
+}
+
+function showBatchDetail() {
+  $("adminHome").hidden = true;
+  $("batchPanel").hidden = false;
+  window.scrollTo(0, 0);
 }
 
 async function openBatch(id) {
   activeBatchId = id;
   const res = await api(`/batches/${id}`);
   const data = await res.json();
-  syncBatchPanelVisibility();
+  showBatchDetail();
   $("batchTitle").textContent = data.batch.name;
   const st = $("batchStatus");
   st.textContent = data.batch.status;
   st.className = `pill ${data.batch.status}`;
-  $("reviewLink").textContent = data.batch.reviewUrl;
+  $("reviewLink").value = data.batch.reviewUrl ?? "";
 
   $("assetList").innerHTML = data.assets
     .map((a) => {
@@ -293,7 +288,6 @@ async function openBatch(id) {
     : "No reviews yet.";
 
   setRichEditorHtml($("assetTitleEditor"), "");
-  $("linkUrl").value = "";
   $("files").value = "";
   renderPendingUploadPreview();
   renderSlideCaptionFields();
@@ -329,20 +323,16 @@ $("createBatch").addEventListener("click", async () => {
 $("addAsset").addEventListener("click", async () => {
   if (!activeBatchId) return;
   const fd = new FormData();
-  fd.append("mode", uploadMode);
+  fd.append("mode", "upload");
   const titleHtml = getRichEditorHtml($("assetTitleEditor"));
   const titlePlain = richEditorPlainText(titleHtml);
-  if (!titlePlain && uploadMode === "upload" && !$("files").files?.length) {
+  if (!titlePlain && !$("files").files?.length) {
     toast("Add files or a caption", "error");
     return;
   }
   fd.append("title", titleHtml || titlePlain);
-  if (uploadMode === "link") {
-    fd.append("linkUrl", $("linkUrl").value);
-  } else {
-    for (const f of $("files").files) fd.append("files", f);
-    fd.append("slideCaptions", JSON.stringify(collectSlideCaptions()));
-  }
+  for (const f of $("files").files) fd.append("files", f);
+  fd.append("slideCaptions", JSON.stringify(collectSlideCaptions()));
   const res = await api(`/batches/${activeBatchId}/assets`, { method: "POST", body: fd });
   const data = await res.json();
   if (!res.ok) return toast(data.error ?? "Add failed");
@@ -369,13 +359,34 @@ $("summarySlack").addEventListener("click", async () => {
 $("deleteBatch").addEventListener("click", async () => {
   if (!confirm("Delete this entire batch?")) return;
   await api(`/batches/${activeBatchId}`, { method: "DELETE" });
-  activeBatchId = null;
-  syncBatchPanelVisibility();
+  showAdminHome();
   toast("Batch deleted");
   loadBatches();
 });
 
+$("backToBatches").addEventListener("click", () => {
+  showAdminHome();
+  loadBatches();
+});
+
+$("reviewLinkOpen").addEventListener("click", () => {
+  const url = $("reviewLink").value;
+  if (!url) return toast("No review link yet", "error");
+  window.open(url, "_blank", "noopener,noreferrer");
+});
+
+$("reviewLinkCopy").addEventListener("click", async () => {
+  const url = $("reviewLink").value;
+  if (!url) return toast("No review link yet", "error");
+  try {
+    await navigator.clipboard.writeText(url);
+    toast("Review link copied", "success");
+  } catch {
+    toast("Could not copy — use Open link", "error");
+  }
+});
+
 (async () => {
-  syncBatchPanelVisibility();
+  showAdminHome();
   if (await ensureAuth()) await loadBatches();
 })();
