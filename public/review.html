@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Review</title>
-    <link rel="stylesheet" href="/styles.css?v=18" />
+    <link rel="stylesheet" href="/styles.css?v=19" />
   </head>
   <body class="review-page">
     <section class="card review-card review-welcome" id="welcomeCard">
@@ -40,15 +40,15 @@
             </div>
             <div class="bar review-bar"><span id="barFill"></span></div>
           </div>
-          <p class="sub review-section-label">Rating</p>
-          <div class="stars stars-touch" id="stars"></div>
-          <label for="feedback">Feedback on whole post (optional)</label>
-          <textarea id="feedback" placeholder="What works? What should change?"></textarea>
           <div id="slideReviewsBlock" class="slide-reviews-block" hidden>
-            <p class="review-section-label">Slide feedback</p>
             <div id="slideReviewNav" class="slide-review-nav" hidden></div>
             <div id="slideReviews" class="slide-reviews"></div>
+            <hr class="review-form-divider" />
           </div>
+          <p class="sub review-section-label" id="overallRatingLabel">Overall rating</p>
+          <div class="stars stars-touch" id="stars"></div>
+          <label for="feedback" class="review-overall-notes-label">Overall notes <span class="sub">(optional)</span></label>
+          <textarea id="feedback" rows="2" placeholder="Applies to the full post"></textarea>
           <div class="review-cta-row">
             <button class="btn review-cta" id="saveNext" type="button" disabled>
               Save &amp; next
@@ -64,6 +64,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="/review.js?v=18" type="module"></script>
+    <script src="/review.js?v=19" type="module"></script>
   </body>
 </html>

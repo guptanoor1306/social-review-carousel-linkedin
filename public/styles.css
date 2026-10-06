@@ -2153,7 +2153,44 @@ body.admin-page {
 }
 
 .slide-reviews-block {
-  margin-top: 16px;
+  margin-top: 4px;
+  margin-bottom: 4px;
+}
+
+.review-form-divider {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 16px 0 14px;
+}
+
+body.review-page .review-form-divider {
+  border-top-color: #333;
+}
+
+.review-overall-notes-label span {
+  font-weight: 400;
+}
+
+.preview-multi-slide .carousel-slide-caption {
+  display: none;
+}
+
+.slide-review-card--compact {
+  padding: 10px 0 0;
+  border: 0;
+  background: transparent;
+}
+
+body.review-page .slide-review-card--compact {
+  background: transparent;
+}
+
+.slide-review-card--compact .slide-review-stars {
+  margin-bottom: 8px;
+}
+
+.slide-review-card--compact .slide-review-feedback {
+  min-height: 56px;
 }
 
 .slide-review-nav {
@@ -2181,10 +2218,13 @@ body.admin-page {
 }
 
 .slide-review-nav-label {
-  font-size: 0.88rem;
+  font-size: 0.9rem;
   font-weight: 600;
-  min-width: 7rem;
+  min-width: 0;
+  flex: 1;
   text-align: center;
+  line-height: 1.3;
+  padding: 0 4px;
 }
 
 .slide-reviews {

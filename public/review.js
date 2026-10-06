@@ -97,6 +97,12 @@ function updateProgress(i) {
     i < total - 1 ? "Save & next" : "Save & finish";
 }
 
+function slideDisplayName(slide, slideIndex) {
+  const cap = String(slide?.caption ?? "").trim();
+  if (cap) return cap;
+  return `Slide ${slideIndex + 1}`;
+}
+
 function setActiveSlideIndex(i) {
   const asset = state.assets[state.index];
   const slides = asset?.slides ?? [];
@@ -136,7 +142,9 @@ function renderActiveSlideReview(asset) {
 
   const label = document.createElement("span");
   label.className = "slide-review-nav-label";
-  label.textContent = `Slide ${slideIndex + 1} of ${slides.length}`;
+  const name = slideDisplayName(slide, slideIndex);
+  label.textContent =
+    slides.length > 1 ? `${name} · ${slideIndex + 1}/${slides.length}` : name;
 
   const next = document.createElement("button");
   next.type = "button";
@@ -148,19 +156,10 @@ function renderActiveSlideReview(asset) {
   nav.append(prev, label, next);
 
   const card = document.createElement("div");
-  card.className = "slide-review-card";
-  const cap = slide.caption
-    ? `<p class="slide-review-caption">${escapeHtml(slide.caption)}</p>`
-    : "";
+  card.className = "slide-review-card slide-review-card--compact";
   card.innerHTML = `
-    <div class="slide-review-head">
-      <strong>${escapeHtml(slide.label ?? `Slide ${slideIndex + 1}`)}</strong>
-    </div>
-    ${cap}
-    <p class="sub review-section-label" style="margin:8px 0 6px">Rating for this slide (optional)</p>
     <div class="slide-review-stars"></div>
-    <label class="sub">Feedback for this slide (optional)</label>
-    <textarea class="slide-review-feedback" rows="3" placeholder="Notes for slide ${slideIndex + 1}"></textarea>
+    <textarea class="slide-review-feedback" rows="2" placeholder="Optional notes for this slide"></textarea>
   `;
   root.appendChild(card);
 
@@ -263,8 +262,12 @@ function showAsset(i) {
     $("reviewFlow").hidden = true;
     lightbox.open(payload);
   };
-  renderPlatformPreview($("previewMount"), previewOpts, openPreview);
+  const mount = $("previewMount");
+  mount.classList.toggle("preview-multi-slide", (asset.slides?.length ?? 0) > 1);
+  renderPlatformPreview(mount, previewOpts, openPreview);
   renderActiveSlideReview(asset);
+  $("overallRatingLabel").textContent =
+    (asset.slides?.length ?? 0) > 1 ? "Overall rating" : "Rating";
 
   const immersivePayload = buildImmersivePayload(previewOpts) ?? null;
   if (immersivePayload && !isMobileReview()) {
