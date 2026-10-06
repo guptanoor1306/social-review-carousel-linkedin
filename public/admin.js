@@ -54,69 +54,56 @@ function renderSlideThumbs(slides) {
   return `<div class="carousel carousel-compact">${items}</div>`;
 }
 
-function renderPendingUploadPreview() {
-  const root = $("uploadPreview");
+function renderUploadCompose() {
+  const root = $("uploadCompose");
   const files = $("files").files;
+  const saved = collectSlideCaptions();
   root.innerHTML = "";
   if (!files?.length) {
     root.hidden = true;
     return;
   }
   root.hidden = false;
-  root.appendChild(document.createTextNode("Selected files: "));
-  const row = document.createElement("div");
-  row.className = "carousel carousel-compact";
-  for (const f of files) {
+
+  for (let i = 0; i < files.length; i += 1) {
+    const f = files[i];
+    const row = document.createElement("div");
+    row.className = "upload-compose-row";
+
+    const media = document.createElement("div");
+    media.className = "upload-compose-media";
     if (f.type.startsWith("video/")) {
-      const wrap = document.createElement("div");
-      wrap.className = "asset-thumb--video";
-      wrap.title = f.name;
       const v = document.createElement("video");
       v.src = URL.createObjectURL(f);
       v.muted = true;
       v.playsInline = true;
-      wrap.appendChild(v);
-      row.appendChild(wrap);
+      v.controls = true;
+      media.appendChild(v);
     } else if (f.type.startsWith("image/")) {
       const img = document.createElement("img");
       img.src = URL.createObjectURL(f);
       img.alt = f.name;
-      img.title = f.name;
-      row.appendChild(img);
+      media.appendChild(img);
     } else {
-      const wrap = document.createElement("div");
-      wrap.className = "asset-thumb--file";
-      wrap.title = f.name;
-      wrap.textContent = f.name.slice(0, 8);
-      row.appendChild(wrap);
+      media.textContent = f.name;
     }
-  }
-  root.appendChild(row);
-  renderSlideCaptionFields();
-}
 
-function renderSlideCaptionFields() {
-  const panel = $("slideCaptionsPanel");
-  const list = $("slideCaptionsList");
-  const files = $("files").files;
-  list.innerHTML = "";
-  if (!files?.length || files.length < 2) {
-    panel.hidden = true;
-    return;
-  }
-  panel.hidden = false;
-  for (let i = 0; i < files.length; i += 1) {
-    const f = files[i];
-    const row = document.createElement("div");
-    row.className = "slide-caption-row";
+    const body = document.createElement("div");
+    body.className = "upload-compose-body";
     const lab = document.createElement("label");
-    lab.textContent = `Slide ${i + 1} · ${f.name}`;
+    lab.textContent = `Slide ${i + 1}`;
+    const sub = document.createElement("p");
+    sub.className = "sub upload-compose-filename";
+    sub.textContent = f.name;
     const input = document.createElement("textarea");
     input.className = "slide-caption-input";
-    input.rows = 2;
-    input.placeholder = "Optional caption for this slide";
-    row.append(lab, input);
-    list.appendChild(row);
+    input.rows = 4;
+    input.placeholder = "Caption for this slide (optional)";
+    input.value = saved[i] ?? "";
+    body.append(lab, sub, input);
+
+    row.append(media, body);
+    root.appendChild(row);
   }
 }
 
@@ -289,11 +276,10 @@ async function openBatch(id) {
 
   setRichEditorHtml($("assetTitleEditor"), "");
   $("files").value = "";
-  renderPendingUploadPreview();
-  renderSlideCaptionFields();
+  renderUploadCompose();
 }
 
-$("files").addEventListener("change", renderPendingUploadPreview);
+$("files").addEventListener("change", renderUploadCompose);
 mountRichEditor($("assetTitleToolbar"), $("assetTitleEditor"));
 
 $("createBatch").addEventListener("click", async () => {

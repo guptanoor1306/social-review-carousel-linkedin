@@ -2078,30 +2078,66 @@ body.admin-page {
   font-weight: 700;
 }
 
-.slide-captions-panel {
-  margin-top: 14px;
-  padding: 12px;
-  border-radius: 12px;
-  border: 1px solid var(--line);
-  background: #fafbff;
-}
-
-.slide-captions-list {
+.upload-compose {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
+  margin-top: 14px;
 }
 
-.slide-caption-row label {
-  font-size: 0.82rem;
-  color: var(--muted);
-  margin-bottom: 4px;
+.upload-compose-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 200px) minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fafbff;
+  align-items: start;
+}
+
+.upload-compose-media {
+  border-radius: 10px;
+  overflow: hidden;
+  background: #111;
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+}
+
+.upload-compose-media img,
+.upload-compose-media video {
+  width: 100%;
+  max-height: 220px;
+  object-fit: contain;
+  display: block;
+}
+
+.upload-compose-body label {
+  font-weight: 700;
+  margin-bottom: 2px;
+}
+
+.upload-compose-filename {
+  margin: 0 0 8px !important;
+  font-size: 0.78rem !important;
+  word-break: break-all;
 }
 
 .slide-caption-input {
   width: 100%;
-  min-height: 56px;
+  min-height: 88px;
   resize: vertical;
+}
+
+@media (max-width: 640px) {
+  .upload-compose-row {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-compose-media {
+    max-height: 200px;
+  }
 }
 
 .asset-item-title {
@@ -2120,10 +2156,39 @@ body.admin-page {
   margin-top: 16px;
 }
 
-.slide-reviews {
+.slide-review-nav {
   display: flex;
-  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   gap: 12px;
+  margin-bottom: 10px;
+}
+
+.slide-review-nav-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: #1a1a1a;
+  color: var(--text);
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.slide-review-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.slide-review-nav-label {
+  font-size: 0.88rem;
+  font-weight: 600;
+  min-width: 7rem;
+  text-align: center;
+}
+
+.slide-reviews {
+  display: block;
 }
 
 .slide-review-card {

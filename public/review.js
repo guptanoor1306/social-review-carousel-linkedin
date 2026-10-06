@@ -4,6 +4,7 @@ import {
   mountLightbox,
   PLATFORM_LOGO,
   renderPlatformPreview,
+  scrollPreviewCarouselToIndex,
   supportsPlatformPreview,
   toMediaOnlyPayload,
 } from "./platform-preview.js";
@@ -29,6 +30,7 @@ let state = {
   batch: null,
   started: false,
   slideDetails: {},
+  activeSlideIndex: 0,
 };
 
 function escapeHtml(s) {
@@ -86,7 +88,6 @@ function updatePlatformRow(batch) {
 }
 
 function updateProgress(i) {
-  const asset = state.assets[i];
   const total = state.assets.length;
   $("assetCounter").textContent = `${i + 1}/${total}`;
   $("formBatchMeta").textContent = state.batch.name;
@@ -96,59 +97,98 @@ function updateProgress(i) {
     i < total - 1 ? "Save & next" : "Save & finish";
 }
 
-function renderSlideReviews(asset) {
+function setActiveSlideIndex(i) {
+  const asset = state.assets[state.index];
+  const slides = asset?.slides ?? [];
+  if (!slides.length) return;
+  const next = Math.min(Math.max(i, 0), slides.length - 1);
+  if (next === state.activeSlideIndex) return;
+  state.activeSlideIndex = next;
+  renderActiveSlideReview(asset);
+  scrollPreviewCarouselToIndex($("previewMount"), next);
+}
+
+function renderActiveSlideReview(asset) {
   const block = $("slideReviewsBlock");
+  const nav = $("slideReviewNav");
   const root = $("slideReviews");
   root.innerHTML = "";
   const slides = asset.slides ?? [];
   if (slides.length <= 1) {
     block.hidden = true;
+    nav.hidden = true;
     return;
   }
   block.hidden = false;
-  state.slideDetails = state.slideDetails ?? {};
-  slides.forEach((slide, slideIndex) => {
-    const card = document.createElement("div");
-    card.className = "slide-review-card";
-    const cap = slide.caption
-      ? `<p class="slide-review-caption">${escapeHtml(slide.caption)}</p>`
-      : "";
-    card.innerHTML = `
-      <div class="slide-review-head">
-        <strong>Slide ${slideIndex + 1}</strong>
-        <span class="sub">${slide.label ?? ""}</span>
-      </div>
-      ${cap}
-      <div class="slide-review-stars" data-slide="${slideIndex}"></div>
-      <textarea class="slide-review-feedback" data-slide="${slideIndex}" rows="2" placeholder="Feedback for this slide"></textarea>
-    `;
-    root.appendChild(card);
-    const starsRoot = card.querySelector(".slide-review-stars");
-    const saved = state.slideDetails[slideIndex] ?? { rating: 0, feedback: "" };
-    for (let n = 1; n <= 5; n += 1) {
-      const btn = document.createElement("button");
-      btn.type = "button";
-      btn.className = `star star-sm${saved.rating === n ? " active" : ""}`;
-      btn.textContent = `${n} ★`;
-      btn.addEventListener("click", () => {
-        state.slideDetails[slideIndex] = {
-          ...state.slideDetails[slideIndex],
-          rating: n,
-        };
-        starsRoot.querySelectorAll(".star").forEach((s, si) => {
-          s.classList.toggle("active", si + 1 === n);
-        });
-      });
-      starsRoot.appendChild(btn);
-    }
-    const ta = card.querySelector(".slide-review-feedback");
-    ta.value = saved.feedback ?? "";
-    ta.addEventListener("input", () => {
+  nav.hidden = false;
+
+  const slideIndex = Math.min(state.activeSlideIndex, slides.length - 1);
+  state.activeSlideIndex = slideIndex;
+  const slide = slides[slideIndex];
+
+  nav.innerHTML = "";
+  const prev = document.createElement("button");
+  prev.type = "button";
+  prev.className = "slide-review-nav-btn";
+  prev.textContent = "‹";
+  prev.disabled = slideIndex <= 0;
+  prev.addEventListener("click", () => setActiveSlideIndex(slideIndex - 1));
+
+  const label = document.createElement("span");
+  label.className = "slide-review-nav-label";
+  label.textContent = `Slide ${slideIndex + 1} of ${slides.length}`;
+
+  const next = document.createElement("button");
+  next.type = "button";
+  next.className = "slide-review-nav-btn";
+  next.textContent = "›";
+  next.disabled = slideIndex >= slides.length - 1;
+  next.addEventListener("click", () => setActiveSlideIndex(slideIndex + 1));
+
+  nav.append(prev, label, next);
+
+  const card = document.createElement("div");
+  card.className = "slide-review-card";
+  const cap = slide.caption
+    ? `<p class="slide-review-caption">${escapeHtml(slide.caption)}</p>`
+    : "";
+  card.innerHTML = `
+    <div class="slide-review-head">
+      <strong>${escapeHtml(slide.label ?? `Slide ${slideIndex + 1}`)}</strong>
+    </div>
+    ${cap}
+    <p class="sub review-section-label" style="margin:8px 0 6px">Rating for this slide (optional)</p>
+    <div class="slide-review-stars"></div>
+    <label class="sub">Feedback for this slide (optional)</label>
+    <textarea class="slide-review-feedback" rows="3" placeholder="Notes for slide ${slideIndex + 1}"></textarea>
+  `;
+  root.appendChild(card);
+
+  const starsRoot = card.querySelector(".slide-review-stars");
+  const saved = state.slideDetails[slideIndex] ?? { rating: 0, feedback: "" };
+  for (let n = 1; n <= 5; n += 1) {
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = `star star-sm${saved.rating === n ? " active" : ""}`;
+    btn.textContent = `${n} ★`;
+    btn.addEventListener("click", () => {
       state.slideDetails[slideIndex] = {
         ...state.slideDetails[slideIndex],
-        feedback: ta.value,
+        rating: n,
       };
+      starsRoot.querySelectorAll(".star").forEach((s, si) => {
+        s.classList.toggle("active", si + 1 === n);
+      });
     });
+    starsRoot.appendChild(btn);
+  }
+  const ta = card.querySelector(".slide-review-feedback");
+  ta.value = saved.feedback ?? "";
+  ta.addEventListener("input", () => {
+    state.slideDetails[slideIndex] = {
+      ...state.slideDetails[slideIndex],
+      feedback: ta.value,
+    };
   });
 }
 
@@ -174,11 +214,11 @@ function showAsset(i) {
   state.index = i;
   state.rating = 0;
   state.slideDetails = {};
+  state.activeSlideIndex = 0;
   $("feedback").value = "";
   $("assetCard").hidden = false;
   $("doneCard").hidden = true;
   $("assetTitle").innerHTML = `<span class="sub">${asset.index}/${state.assets.length}</span> ${sanitizeRichHtml(asset.title)}`;
-  renderSlideReviews(asset);
   updatePlatformRow(state.batch);
 
   const linkParts = [];
@@ -204,6 +244,10 @@ function showAsset(i) {
     slides: asset.slides ?? [],
     title: asset.title,
     postUrl: asset.postUrl,
+    onSlideIndex: (idx) => {
+      state.activeSlideIndex = idx;
+      renderActiveSlideReview(asset);
+    },
   };
   const openPreview = (payload) => {
     if (!payload) return;
@@ -220,6 +264,7 @@ function showAsset(i) {
     lightbox.open(payload);
   };
   renderPlatformPreview($("previewMount"), previewOpts, openPreview);
+  renderActiveSlideReview(asset);
 
   const immersivePayload = buildImmersivePayload(previewOpts) ?? null;
   if (immersivePayload && !isMobileReview()) {

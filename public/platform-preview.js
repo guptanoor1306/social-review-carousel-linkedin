@@ -137,7 +137,7 @@ export function buildLinkedInMediaGrid(slides, onSelect) {
   return grid;
 }
 
-function renderLinkedInFeedPreview(mount, list, title, openFullscreen, payload) {
+function renderLinkedInFeedPreview(mount, list, title, openFullscreen, payload, onSlideIndex) {
   const wrap = document.createElement("div");
   wrap.className = "li-feed-preview";
 
@@ -157,11 +157,9 @@ function renderLinkedInFeedPreview(mount, list, title, openFullscreen, payload) 
   caption.innerHTML = sanitizeRichHtml(title) || ZERO1.linkedin.name;
   wrap.appendChild(caption);
 
-  const grid = buildLinkedInMediaGrid(list, (index) =>
-    openPreviewFromStrip(openFullscreen, payload, list, index, title, {
-      linkedinFocus: true,
-    }),
-  );
+  const grid = buildLinkedInMediaGrid(list, (index) => {
+    onSlideIndex?.(index);
+  });
   wrap.appendChild(grid);
 
   if (payload) {
@@ -315,7 +313,40 @@ function openPreviewFromStrip(openFullscreen, payload, list, index, title, opts 
   });
 }
 
-function renderHorizontalSlideStrip(mount, list, openFullscreen, payload, title) {
+export function attachCarouselScrollIndex(strip, onChange) {
+  if (!strip || typeof onChange !== "function") return;
+  const pick = () => {
+    if (!strip.children.length) return;
+    const center = strip.scrollLeft + strip.clientWidth / 2;
+    let best = 0;
+    let bestDist = Infinity;
+    [...strip.children].forEach((child, i) => {
+      const mid = child.offsetLeft + child.offsetWidth / 2;
+      const dist = Math.abs(mid - center);
+      if (dist < bestDist) {
+        bestDist = dist;
+        best = i;
+      }
+    });
+    onChange(best);
+  };
+  strip.addEventListener(
+    "scroll",
+    () => {
+      requestAnimationFrame(pick);
+    },
+    { passive: true },
+  );
+  requestAnimationFrame(pick);
+}
+
+export function scrollPreviewCarouselToIndex(mount, index) {
+  const strip = mount?.querySelector?.(".preview-carousel");
+  if (!strip) return;
+  scrollCarouselToIndex(strip, index);
+}
+
+function renderHorizontalSlideStrip(mount, list, openFullscreen, payload, title, onSlideIndex) {
   const wrap = document.createElement("div");
   wrap.className = "preview-strip-wrap";
   const strip = document.createElement("div");
@@ -330,6 +361,7 @@ function renderHorizontalSlideStrip(mount, list, openFullscreen, payload, title)
   });
   wrap.appendChild(strip);
   lockCarouselAtStart(strip);
+  if (onSlideIndex) attachCarouselScrollIndex(strip, onSlideIndex);
 
   if (payload?.platform && payload.platform !== "fallback") {
     const cta = document.createElement("button");
@@ -348,7 +380,7 @@ function renderHorizontalSlideStrip(mount, list, openFullscreen, payload, title)
 }
 
 export function renderPlatformPreview(mount, opts, openFullscreen) {
-  const { platform, assetType, slides, title, postUrl } = opts;
+  const { platform, assetType, slides, title, postUrl, onSlideIndex } = opts;
   mount.innerHTML = "";
   mount.className = "preview-mount";
 
@@ -357,7 +389,7 @@ export function renderPlatformPreview(mount, opts, openFullscreen) {
 
   if (!supportsPlatformPreview(platform, assetType)) {
     if (list.length) {
-      renderHorizontalSlideStrip(mount, list, openFullscreen, null, title);
+      renderHorizontalSlideStrip(mount, list, openFullscreen, null, title, onSlideIndex);
     }
     return list.length
       ? { platform: "fallback", slides: list, index: 0, title: title ?? "" }
@@ -366,9 +398,9 @@ export function renderPlatformPreview(mount, opts, openFullscreen) {
 
   if (list.length) {
     if (platform === "linkedin" && isDesktopReview()) {
-      renderLinkedInFeedPreview(mount, list, title, openFullscreen, payload);
+      renderLinkedInFeedPreview(mount, list, title, openFullscreen, payload, onSlideIndex);
     } else {
-      renderHorizontalSlideStrip(mount, list, openFullscreen, payload, title);
+      renderHorizontalSlideStrip(mount, list, openFullscreen, payload, title, onSlideIndex);
     }
     return payload;
   }

@@ -3,6 +3,7 @@ import type { BatchRow } from "../db/index.js";
 import { formatPlatformType } from "../models/platform.js";
 import type { AssetAggregate, BatchSummary } from "../services/aggregate.js";
 import type { SlideDetail } from "../models/slide-details.js";
+import { htmlToSlackMrkdwn, plainTextForSlack } from "../utils/html-to-slack.js";
 
 const ASSETS_PER_PAGE = 8;
 
@@ -33,7 +34,7 @@ function reviewerCommentLines(c: AssetAggregate["comments"][number]): string[] {
   const lines: string[] = [];
   const head = `• *${c.name}* — ${c.rating}/5`;
   if (c.feedback) {
-    lines.push(...splitMrkdwn(`${head}: ${c.feedback}`));
+    lines.push(...splitMrkdwn(`${head}: ${plainTextForSlack(c.feedback)}`));
   } else {
     lines.push(head);
   }
@@ -47,7 +48,7 @@ function reviewerCommentLines(c: AssetAggregate["comments"][number]): string[] {
 function formatSlideDetail(sd: SlideDetail): string {
   const ratingPart = sd.rating ? ` (${sd.rating}/5)` : "";
   if (sd.feedback) {
-    return `    ◦ Slide ${sd.slideIndex + 1}${ratingPart}: ${sd.feedback}`;
+    return `    ◦ Slide ${sd.slideIndex + 1}${ratingPart}: ${plainTextForSlack(sd.feedback)}`;
   }
   if (sd.rating) {
     return `    ◦ Slide ${sd.slideIndex + 1}: ${sd.rating}/5`;
@@ -108,14 +109,17 @@ export function resultsPageBlocks(
   }
 
   for (const a of slice) {
-    const title = truncate(a.title || "Untitled asset", 200);
+    const title = truncate(
+      htmlToSlackMrkdwn(a.title || "Untitled asset") || "Untitled asset",
+      200,
+    );
 
     if (a.count === 0) {
       blocks.push({
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `*${title}*\n_No ratings yet_`,
+          text: `${title}\n_No ratings yet_`,
         },
       });
       blocks.push({ type: "divider" });
@@ -128,7 +132,7 @@ export function resultsPageBlocks(
       type: "section",
       text: {
         type: "mrkdwn",
-        text: `*${title}*\n*Average:* ${avgLine}`,
+        text: `${title}\n*Average:* ${avgLine}`,
       },
     });
 

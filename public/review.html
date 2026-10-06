@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Review</title>
-    <link rel="stylesheet" href="/styles.css?v=16" />
+    <link rel="stylesheet" href="/styles.css?v=18" />
   </head>
   <body class="review-page">
     <section class="card review-card review-welcome" id="welcomeCard">
@@ -45,7 +45,8 @@
           <label for="feedback">Feedback on whole post (optional)</label>
           <textarea id="feedback" placeholder="What works? What should change?"></textarea>
           <div id="slideReviewsBlock" class="slide-reviews-block" hidden>
-            <p class="review-section-label">Per-slide feedback (optional)</p>
+            <p class="review-section-label">Slide feedback</p>
+            <div id="slideReviewNav" class="slide-review-nav" hidden></div>
             <div id="slideReviews" class="slide-reviews"></div>
           </div>
           <div class="review-cta-row">
@@ -63,6 +64,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="/review.js?v=16" type="module"></script>
+    <script src="/review.js?v=18" type="module"></script>
   </body>
 </html>
