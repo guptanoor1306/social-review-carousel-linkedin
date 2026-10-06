@@ -7,6 +7,7 @@ import {
   supportsPlatformPreview,
   toMediaOnlyPayload,
 } from "./platform-preview.js";
+import { sanitizeRichHtml } from "./rich-text.js";
 
 const $ = (id) => document.getElementById(id);
 
@@ -21,7 +22,21 @@ const lightbox = mountLightbox({
   },
 });
 
-let state = { assets: [], index: 0, rating: 0, batch: null, started: false };
+let state = {
+  assets: [],
+  index: 0,
+  rating: 0,
+  batch: null,
+  started: false,
+  slideDetails: {},
+};
+
+function escapeHtml(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
 
 function toast(msg) {
   const el = $("toast");
@@ -81,15 +96,89 @@ function updateProgress(i) {
     i < total - 1 ? "Save & next" : "Save & finish";
 }
 
+function renderSlideReviews(asset) {
+  const block = $("slideReviewsBlock");
+  const root = $("slideReviews");
+  root.innerHTML = "";
+  const slides = asset.slides ?? [];
+  if (slides.length <= 1) {
+    block.hidden = true;
+    return;
+  }
+  block.hidden = false;
+  state.slideDetails = state.slideDetails ?? {};
+  slides.forEach((slide, slideIndex) => {
+    const card = document.createElement("div");
+    card.className = "slide-review-card";
+    const cap = slide.caption
+      ? `<p class="slide-review-caption">${escapeHtml(slide.caption)}</p>`
+      : "";
+    card.innerHTML = `
+      <div class="slide-review-head">
+        <strong>Slide ${slideIndex + 1}</strong>
+        <span class="sub">${slide.label ?? ""}</span>
+      </div>
+      ${cap}
+      <div class="slide-review-stars" data-slide="${slideIndex}"></div>
+      <textarea class="slide-review-feedback" data-slide="${slideIndex}" rows="2" placeholder="Feedback for this slide"></textarea>
+    `;
+    root.appendChild(card);
+    const starsRoot = card.querySelector(".slide-review-stars");
+    const saved = state.slideDetails[slideIndex] ?? { rating: 0, feedback: "" };
+    for (let n = 1; n <= 5; n += 1) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = `star star-sm${saved.rating === n ? " active" : ""}`;
+      btn.textContent = `${n} ★`;
+      btn.addEventListener("click", () => {
+        state.slideDetails[slideIndex] = {
+          ...state.slideDetails[slideIndex],
+          rating: n,
+        };
+        starsRoot.querySelectorAll(".star").forEach((s, si) => {
+          s.classList.toggle("active", si + 1 === n);
+        });
+      });
+      starsRoot.appendChild(btn);
+    }
+    const ta = card.querySelector(".slide-review-feedback");
+    ta.value = saved.feedback ?? "";
+    ta.addEventListener("input", () => {
+      state.slideDetails[slideIndex] = {
+        ...state.slideDetails[slideIndex],
+        feedback: ta.value,
+      };
+    });
+  });
+}
+
+function collectSlideDetailsPayload() {
+  const out = [];
+  for (const [key, val] of Object.entries(state.slideDetails ?? {})) {
+    const slideIndex = Number(key);
+    const rating = val?.rating ? Number(val.rating) : null;
+    const feedback = String(val?.feedback ?? "").trim();
+    if (!rating && !feedback) continue;
+    out.push({
+      slideIndex,
+      rating: rating && rating >= 1 && rating <= 5 ? rating : null,
+      feedback,
+    });
+  }
+  return out;
+}
+
 function showAsset(i) {
   const asset = state.assets[i];
   if (!asset) return;
   state.index = i;
   state.rating = 0;
+  state.slideDetails = {};
   $("feedback").value = "";
   $("assetCard").hidden = false;
   $("doneCard").hidden = true;
-  $("assetTitle").textContent = `${asset.index}/${state.assets.length} · ${asset.title}`;
+  $("assetTitle").innerHTML = `<span class="sub">${asset.index}/${state.assets.length}</span> ${sanitizeRichHtml(asset.title)}`;
+  renderSlideReviews(asset);
   updatePlatformRow(state.batch);
 
   const linkParts = [];
@@ -231,6 +320,7 @@ $("saveNext").addEventListener("click", async () => {
       assetId: asset.id,
       rating: state.rating,
       feedback: $("feedback").value,
+      slideDetails: collectSlideDetailsPayload(),
     }),
   });
   const data = await res.json();

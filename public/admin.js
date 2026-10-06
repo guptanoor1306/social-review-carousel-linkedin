@@ -1,3 +1,10 @@
+import {
+  getRichEditorHtml,
+  mountRichEditor,
+  richEditorPlainText,
+  setRichEditorHtml,
+} from "./rich-text.js";
+
 const $ = (id) => document.getElementById(id);
 let activeBatchId = null;
 let uploadMode = "upload";
@@ -86,6 +93,36 @@ function renderPendingUploadPreview() {
     }
   }
   root.appendChild(row);
+  renderSlideCaptionFields();
+}
+
+function renderSlideCaptionFields() {
+  const panel = $("slideCaptionsPanel");
+  const list = $("slideCaptionsList");
+  const files = $("files").files;
+  list.innerHTML = "";
+  if (!files?.length || files.length < 2) {
+    panel.hidden = true;
+    return;
+  }
+  panel.hidden = false;
+  for (let i = 0; i < files.length; i += 1) {
+    const f = files[i];
+    const row = document.createElement("div");
+    row.className = "slide-caption-row";
+    const lab = document.createElement("label");
+    lab.textContent = `Slide ${i + 1} · ${f.name}`;
+    const input = document.createElement("textarea");
+    input.className = "slide-caption-input";
+    input.rows = 2;
+    input.placeholder = "Optional caption for this slide";
+    row.append(lab, input);
+    list.appendChild(row);
+  }
+}
+
+function collectSlideCaptions() {
+  return [...document.querySelectorAll(".slide-caption-input")].map((el) => el.value);
 }
 
 function syncAssetTypes() {
@@ -221,15 +258,21 @@ async function openBatch(id) {
   $("reviewLink").textContent = data.batch.reviewUrl;
 
   $("assetList").innerHTML = data.assets
-    .map(
-      (a) => `<div class="asset-item">
+    .map((a) => {
+      const slideCaps = (a.slides ?? [])
+        .map((s, i) => (s.caption ? `<li><small>Slide ${i + 1}: ${escapeHtml(s.caption)}</small></li>` : ""))
+        .filter(Boolean)
+        .join("");
+      return `<div class="asset-item">
         <div class="asset-item-body">
           ${renderSlideThumbs(a.slides)}
-          <div><strong>${a.index}. ${escapeHtml(a.title)}</strong><br/><small>${a.slides.length} preview(s)</small></div>
+          <div class="asset-item-title rich-html">${a.index}. ${a.title}</div>
+          <small>${a.slides.length} preview(s)</small>
+          ${slideCaps ? `<ul class="asset-slide-caps">${slideCaps}</ul>` : ""}
         </div>
         <button class="btn btn-sm danger" data-del-asset="${a.id}" type="button">Remove</button>
-      </div>`,
-    )
+      </div>`;
+    })
     .join("");
 
   $("assetList").querySelectorAll("[data-del-asset]").forEach((btn) => {
@@ -249,13 +292,15 @@ async function openBatch(id) {
     ? `Reviewers: ${reviewers.join(", ")}`
     : "No reviews yet.";
 
-  $("assetTitle").value = "";
+  setRichEditorHtml($("assetTitleEditor"), "");
   $("linkUrl").value = "";
   $("files").value = "";
   renderPendingUploadPreview();
+  renderSlideCaptionFields();
 }
 
 $("files").addEventListener("change", renderPendingUploadPreview);
+mountRichEditor($("assetTitleToolbar"), $("assetTitleEditor"));
 
 $("createBatch").addEventListener("click", async () => {
   const channelId = $("channelId").value.trim();
@@ -285,11 +330,18 @@ $("addAsset").addEventListener("click", async () => {
   if (!activeBatchId) return;
   const fd = new FormData();
   fd.append("mode", uploadMode);
-  fd.append("title", $("assetTitle").value);
+  const titleHtml = getRichEditorHtml($("assetTitleEditor"));
+  const titlePlain = richEditorPlainText(titleHtml);
+  if (!titlePlain && uploadMode === "upload" && !$("files").files?.length) {
+    toast("Add files or a caption", "error");
+    return;
+  }
+  fd.append("title", titleHtml || titlePlain);
   if (uploadMode === "link") {
     fd.append("linkUrl", $("linkUrl").value);
   } else {
     for (const f of $("files").files) fd.append("files", f);
+    fd.append("slideCaptions", JSON.stringify(collectSlideCaptions()));
   }
   const res = await api(`/batches/${activeBatchId}/assets`, { method: "POST", body: fd });
   const data = await res.json();

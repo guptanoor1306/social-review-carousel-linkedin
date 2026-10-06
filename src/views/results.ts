@@ -2,12 +2,57 @@ import type { Button, KnownBlock } from "@slack/types";
 import type { BatchRow } from "../db/index.js";
 import { formatPlatformType } from "../models/platform.js";
 import type { AssetAggregate, BatchSummary } from "../services/aggregate.js";
+import type { SlideDetail } from "../models/slide-details.js";
 
 const ASSETS_PER_PAGE = 8;
 
 function truncate(s: string, max: number): string {
   if (s.length <= max) return s;
   return `${s.slice(0, max - 1)}…`;
+}
+
+const SLACK_SECTION_MAX = 2900;
+
+function splitMrkdwn(text: string, max = SLACK_SECTION_MAX): string[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  if (trimmed.length <= max) return [trimmed];
+  const chunks: string[] = [];
+  let rest = trimmed;
+  while (rest.length > max) {
+    let cut = rest.lastIndexOf("\n", max);
+    if (cut < Math.floor(max * 0.35)) cut = max;
+    chunks.push(rest.slice(0, cut).trimEnd());
+    rest = rest.slice(cut).trimStart();
+  }
+  if (rest) chunks.push(rest);
+  return chunks;
+}
+
+function reviewerCommentLines(c: AssetAggregate["comments"][number]): string[] {
+  const lines: string[] = [];
+  const head = `• *${c.name}* — ${c.rating}/5`;
+  if (c.feedback) {
+    lines.push(...splitMrkdwn(`${head}: ${c.feedback}`));
+  } else {
+    lines.push(head);
+  }
+  for (const sd of c.slideDetails ?? []) {
+    const slideLabel = formatSlideDetail(sd);
+    if (slideLabel) lines.push(...splitMrkdwn(slideLabel));
+  }
+  return lines;
+}
+
+function formatSlideDetail(sd: SlideDetail): string {
+  const ratingPart = sd.rating ? ` (${sd.rating}/5)` : "";
+  if (sd.feedback) {
+    return `    ◦ Slide ${sd.slideIndex + 1}${ratingPart}: ${sd.feedback}`;
+  }
+  if (sd.rating) {
+    return `    ◦ Slide ${sd.slideIndex + 1}: ${sd.rating}/5`;
+  }
+  return "";
 }
 
 function starLine(avg: number): string {
@@ -87,21 +132,29 @@ export function resultsPageBlocks(
       },
     });
 
-    const reviewLines = a.comments
-      .slice(0, 15)
-      .map((c) => {
-        const note = c.feedback ? truncate(c.feedback, 280) : "_No written feedback_";
-        return `• *${c.name}* — ${c.rating}/5: ${note}`;
-      })
-      .join("\n");
-
-    blocks.push({
-      type: "section",
-      text: {
-        type: "mrkdwn",
-        text: reviewLines,
-      },
-    });
+    const commentChunks: string[] = [];
+    let buffer = "";
+    for (const c of a.comments.slice(0, 20)) {
+      for (const line of reviewerCommentLines(c)) {
+        const next = buffer ? `${buffer}\n${line}` : line;
+        if (next.length > SLACK_SECTION_MAX) {
+          if (buffer) commentChunks.push(buffer);
+          buffer = line.length > SLACK_SECTION_MAX ? line.slice(0, SLACK_SECTION_MAX) : line;
+        } else {
+          buffer = next;
+        }
+      }
+    }
+    if (buffer) commentChunks.push(buffer);
+    if (commentChunks.length === 0) {
+      commentChunks.push("_No written feedback_");
+    }
+    for (const chunk of commentChunks) {
+      blocks.push({
+        type: "section",
+        text: { type: "mrkdwn", text: chunk },
+      });
+    }
 
     blocks.push({ type: "divider" });
   }

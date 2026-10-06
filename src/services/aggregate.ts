@@ -1,6 +1,7 @@
 import type { AssetRow } from "../db/index.js";
 import * as store from "../db/store.js";
 import { config } from "../config.js";
+import { parseSlideDetails, type SlideDetail } from "../models/slide-details.js";
 
 export type AssetAggregate = {
   assetId: string;
@@ -9,7 +10,12 @@ export type AssetAggregate = {
   count: number;
   minRating: number;
   maxRating: number;
-  comments: { name: string; rating: number; feedback: string }[];
+  comments: {
+    name: string;
+    rating: number;
+    feedback: string;
+    slideDetails: SlideDetail[];
+  }[];
 };
 
 export type BatchSummary = {
@@ -65,6 +71,7 @@ function toAggregate(
     reviewer_name: string | null;
     rating: number;
     feedback: string | null;
+    slide_details_json: string | null;
   }[],
 ): AssetAggregate {
   if (rows.length === 0) {
@@ -85,6 +92,7 @@ function toAggregate(
     name: (r.reviewer_name?.trim() || r.slack_user_id || "Unknown").trim(),
     rating: r.rating,
     feedback: (r.feedback ?? "").trim(),
+    slideDetails: parseSlideDetails(r.slide_details_json),
   }));
 
   return {

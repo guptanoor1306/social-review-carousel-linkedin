@@ -14,6 +14,7 @@ import {
 import * as store from "../db/store.js";
 import type { AssetMediaItem } from "../models/media.js";
 import { parseAssetMedia } from "../models/media.js";
+import { normalizeSlideDetails } from "../models/slide-details.js";
 import {
   isAssetTypeForPlatform,
   isPlatform,
@@ -137,6 +138,7 @@ export function createApiRouter(): Router {
         postUrl: a.post_url,
         slides: parseAssetMedia(a).map((m, i) => ({
           label: m.label ?? `Slide ${i + 1}`,
+          caption: m.caption ?? "",
           url: mediaPublicUrl(m),
         })),
       })),
@@ -177,11 +179,14 @@ export function createApiRouter(): Router {
           res.status(400).json({ error: "choose a file to upload" });
           return;
         }
+        const slideCaptions = parseSlideCaptionsField(req.body.slideCaptions);
         for (let i = 0; i < files.length; i += 1) {
           const f = files[i]!;
+          const cap = String(slideCaptions[i] ?? "").trim();
           media.push({
             localPath: path.basename(f.path),
             label: files.length > 1 ? `Slide ${i + 1}` : "Media",
+            caption: cap || undefined,
           });
         }
       }
@@ -266,6 +271,7 @@ export function createApiRouter(): Router {
         postUrl: a.post_url,
         slides: parseAssetMedia(a).map((m, i) => ({
           label: m.label ?? `Slide ${i + 1}`,
+          caption: m.caption ?? "",
           url: mediaPublicUrl(m),
         })),
       })),
@@ -285,6 +291,10 @@ export function createApiRouter(): Router {
     const assetId = String(req.body.assetId ?? "");
     const rating = Number(req.body.rating);
     const feedback = String(req.body.feedback ?? "").trim() || null;
+    const slideDetails = normalizeSlideDetails(req.body.slideDetails);
+    const slideDetailsJson = slideDetails.length
+      ? JSON.stringify(slideDetails)
+      : null;
 
     if (reviewerName.length < 2) {
       res.status(400).json({ error: "enter your name" });
@@ -307,6 +317,7 @@ export function createApiRouter(): Router {
       reviewerName,
       rating,
       feedback,
+      slideDetailsJson,
     });
 
     res.json({
@@ -324,6 +335,21 @@ function mediaPublicUrl(item: AssetMediaItem): string | null {
     return `${config.publicBaseUrl}/uploads/${encodeURIComponent(item.localPath)}`;
   }
   return null;
+}
+
+function parseSlideCaptionsField(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw.map((x) => String(x ?? ""));
+  }
+  if (typeof raw === "string" && raw.trim()) {
+    try {
+      const parsed = JSON.parse(raw) as unknown;
+      if (Array.isArray(parsed)) return parsed.map((x) => String(x ?? ""));
+    } catch {
+      return [raw];
+    }
+  }
+  return [];
 }
 
 function defaultTitle(assetType: string, count: number): string {

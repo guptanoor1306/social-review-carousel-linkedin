@@ -57,6 +57,9 @@ export async function initPostgres(): Promise<void> {
   await pool.query(`
     ALTER TABLE responses ADD COLUMN IF NOT EXISTS reviewer_name TEXT;
   `).catch(() => {});
+  await pool.query(`
+    ALTER TABLE responses ADD COLUMN IF NOT EXISTS slide_details_json TEXT;
+  `).catch(() => {});
 }
 
 function webReviewerKey(name: string): string {
@@ -174,6 +177,7 @@ export async function upsertWebResponse(input: {
   reviewerName: string;
   rating: number;
   feedback: string | null;
+  slideDetailsJson?: string | null;
 }): Promise<void> {
   const name = input.reviewerName.trim();
   const existing = await pool.query(
@@ -182,14 +186,19 @@ export async function upsertWebResponse(input: {
   );
   if (existing.rows[0]) {
     await pool.query(
-      `UPDATE responses SET rating = $1, feedback = $2, updated_at = NOW() WHERE id = $3`,
-      [input.rating, input.feedback, existing.rows[0].id],
+      `UPDATE responses SET rating = $1, feedback = $2, slide_details_json = $3, updated_at = NOW() WHERE id = $4`,
+      [
+        input.rating,
+        input.feedback,
+        input.slideDetailsJson ?? null,
+        existing.rows[0].id,
+      ],
     );
     return;
   }
   await pool.query(
-    `INSERT INTO responses (id, batch_id, asset_id, slack_user_id, reviewer_name, rating, feedback)
-     VALUES ($1,$2,$3,$4,$5,$6,$7)`,
+    `INSERT INTO responses (id, batch_id, asset_id, slack_user_id, reviewer_name, rating, feedback, slide_details_json)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8)`,
     [
       randomUUID(),
       input.batchId,
@@ -198,6 +207,7 @@ export async function upsertWebResponse(input: {
       name,
       input.rating,
       input.feedback,
+      input.slideDetailsJson ?? null,
     ],
   );
 }

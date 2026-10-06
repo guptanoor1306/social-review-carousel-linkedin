@@ -6,6 +6,8 @@ export type AssetMediaItem = {
   permalink?: string;
   localPath?: string;
   label?: string;
+  /** Per-slide caption (admin); shown in review preview when set. */
+  caption?: string;
 };
 
 export function parseAssetMedia(asset: AssetRow): AssetMediaItem[] {

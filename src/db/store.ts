@@ -82,6 +82,7 @@ export async function upsertWebResponse(input: {
   reviewerName: string;
   rating: number;
   feedback: string | null;
+  slideDetailsJson?: string | null;
 }): Promise<void> {
   if (usePg()) return pg.upsertWebResponse(input);
   sqlite.upsertWebResponse(input);

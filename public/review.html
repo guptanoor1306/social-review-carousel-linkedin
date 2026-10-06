@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Review</title>
-    <link rel="stylesheet" href="/styles.css?v=15" />
+    <link rel="stylesheet" href="/styles.css?v=16" />
   </head>
   <body class="review-page">
     <section class="card review-card review-welcome" id="welcomeCard">
@@ -24,7 +24,7 @@
 
     <div id="reviewFlow" class="review-shell" hidden>
       <section class="card review-card" id="assetCard" hidden>
-        <h2 id="assetTitle"></h2>
+        <div id="assetTitle" class="asset-title-rich"></div>
         <p class="sub" id="assetLink"></p>
         <div class="preview-platform-row" id="previewPlatformRow" hidden>
           <img id="previewPlatformLogo" alt="" width="24" height="24" />
@@ -42,8 +42,12 @@
           </div>
           <p class="sub review-section-label">Rating</p>
           <div class="stars stars-touch" id="stars"></div>
-          <label for="feedback">Feedback (optional)</label>
+          <label for="feedback">Feedback on whole post (optional)</label>
           <textarea id="feedback" placeholder="What works? What should change?"></textarea>
+          <div id="slideReviewsBlock" class="slide-reviews-block" hidden>
+            <p class="review-section-label">Per-slide feedback (optional)</p>
+            <div id="slideReviews" class="slide-reviews"></div>
+          </div>
           <div class="review-cta-row">
             <button class="btn review-cta" id="saveNext" type="button" disabled>
               Save &amp; next
@@ -59,6 +63,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="/review.js?v=15" type="module"></script>
+    <script src="/review.js?v=16" type="module"></script>
   </body>
 </html>

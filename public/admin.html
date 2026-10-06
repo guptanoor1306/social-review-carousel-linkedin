@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Social Review Admin</title>
-    <link rel="stylesheet" href="/styles.css?v=15" />
+    <link rel="stylesheet" href="/styles.css?v=16" />
   </head>
   <body class="admin-page">
     <div id="loginView" class="login-wrap">
@@ -80,32 +80,52 @@
             <p class="sub">Review link (share or use Notify Slack):</p>
             <div class="link-box" id="reviewLink"></div>
 
-            <h2 style="margin-top: 20px">Add assets</h2>
-            <div class="seg" id="modeSeg">
-              <button type="button" data-mode="upload" class="active">Upload files</button>
-              <button type="button" data-mode="link">Paste link</button>
-            </div>
+            <div class="admin-asset-form">
+              <h2>Add assets</h2>
+              <p class="sub admin-form-hint">
+                Set the post caption first, then upload slides. Each slide can have its own caption below.
+              </p>
 
-            <label for="assetTitle">Title (optional)</label>
-            <input id="assetTitle" placeholder="e.g. Product launch carousel v2" />
-
-            <div id="uploadFields">
-              <label>Files (up to 10)</label>
-              <div class="drop drop-compact">
-                <input id="files" type="file" multiple accept="image/*,video/*" />
-                <p class="sub" style="margin: 8px 0 0">Carousel slides, reels, posts, stories.</p>
+              <div class="seg" id="modeSeg">
+                <button type="button" data-mode="upload" class="active">Upload files</button>
+                <button type="button" data-mode="link">Paste link</button>
               </div>
-              <div class="upload-preview" id="uploadPreview" hidden></div>
-            </div>
 
-            <div id="linkFields" hidden>
-              <label for="linkUrl">Asset link</label>
-              <input id="linkUrl" placeholder="https://…" />
-            </div>
+              <div class="admin-field-block">
+                <label for="assetTitleEditor">Post caption / title</label>
+                <div class="rich-toolbar" id="assetTitleToolbar">
+                  <button type="button" data-cmd="bold" title="Bold"><b>B</b></button>
+                  <button type="button" data-cmd="italic" title="Italic"><i>I</i></button>
+                  <button type="button" data-cmd="insertLineBreak" title="Line break">↵</button>
+                </div>
+                <div
+                  id="assetTitleEditor"
+                  class="rich-editor"
+                  contenteditable="true"
+                  data-placeholder="Write the post caption — bold, italics, and line breaks supported."
+                ></div>
+              </div>
 
-            <button class="btn btn-sm" id="addAsset" type="button" style="margin-top: 12px">
-              Add to batch
-            </button>
+              <div id="uploadFields" class="admin-field-block">
+                <label>Files (up to 10)</label>
+                <div class="drop drop-compact">
+                  <input id="files" type="file" multiple accept="image/*,video/*" />
+                  <p class="sub" style="margin: 8px 0 0">Carousel slides, reels, posts, stories.</p>
+                </div>
+                <div class="upload-preview" id="uploadPreview" hidden></div>
+                <div id="slideCaptionsPanel" class="slide-captions-panel" hidden>
+                  <label class="slide-captions-label">Caption per slide (optional)</label>
+                  <div id="slideCaptionsList" class="slide-captions-list"></div>
+                </div>
+              </div>
+
+              <div id="linkFields" class="admin-field-block" hidden>
+                <label for="linkUrl">Asset link</label>
+                <input id="linkUrl" placeholder="https://…" />
+              </div>
+
+              <button class="btn btn-sm" id="addAsset" type="button">Add to batch</button>
+            </div>
 
             <div class="asset-list" id="assetList"></div>
 
@@ -122,6 +142,6 @@
     </div>
 
     <div class="toast" id="toast"></div>
-    <script src="/admin.js?v=15" type="module"></script>
+    <script src="/admin.js?v=16" type="module"></script>
   </body>
 </html>

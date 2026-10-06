@@ -41,6 +41,7 @@ export type ResponseRow = {
   reviewer_name: string | null;
   rating: number;
   feedback: string | null;
+  slide_details_json: string | null;
   updated_at: string;
 };
 
@@ -93,6 +94,9 @@ function migrate(database: Database.Database): void {
   const respNames = new Set(respCols.map((c) => c.name));
   if (!respNames.has("reviewer_name")) {
     database.exec(`ALTER TABLE responses ADD COLUMN reviewer_name TEXT`);
+  }
+  if (!respNames.has("slide_details_json")) {
+    database.exec(`ALTER TABLE responses ADD COLUMN slide_details_json TEXT`);
   }
 
   database.exec(`
@@ -168,6 +172,7 @@ export function upsertWebResponse(input: {
   reviewerName: string;
   rating: number;
   feedback: string | null;
+  slideDetailsJson?: string | null;
 }): void {
   const name = input.reviewerName.trim();
   const existing = getDb()
@@ -179,16 +184,21 @@ export function upsertWebResponse(input: {
   if (existing) {
     getDb()
       .prepare(
-        `UPDATE responses SET rating = ?, feedback = ?, updated_at = datetime('now') WHERE id = ?`,
+        `UPDATE responses SET rating = ?, feedback = ?, slide_details_json = ?, updated_at = datetime('now') WHERE id = ?`,
       )
-      .run(input.rating, input.feedback, existing.id);
+      .run(
+        input.rating,
+        input.feedback,
+        input.slideDetailsJson ?? null,
+        existing.id,
+      );
     return;
   }
 
   getDb()
     .prepare(
-      `INSERT INTO responses (id, batch_id, asset_id, slack_user_id, reviewer_name, rating, feedback)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO responses (id, batch_id, asset_id, slack_user_id, reviewer_name, rating, feedback, slide_details_json)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
     )
     .run(
       randomUUID(),
@@ -198,6 +208,7 @@ export function upsertWebResponse(input: {
       name,
       input.rating,
       input.feedback,
+      input.slideDetailsJson ?? null,
     );
 }
 

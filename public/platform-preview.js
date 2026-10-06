@@ -1,5 +1,7 @@
 /** Platform previews — Instagram / LinkedIn native-style shells (Zero1 by Zerodha). */
 
+import { sanitizeRichHtml } from "./rich-text.js";
+
 export const ZERO1_LOGO = "/assets/zero1-logo.png";
 export const PLATFORM_LOGO = {
   instagram: "/assets/platform-instagram.svg",
@@ -152,7 +154,7 @@ function renderLinkedInFeedPreview(mount, list, title, openFullscreen, payload) 
 
   const caption = document.createElement("div");
   caption.className = "li-feed-caption";
-  caption.textContent = title || ZERO1.linkedin.name;
+  caption.innerHTML = sanitizeRichHtml(title) || ZERO1.linkedin.name;
   wrap.appendChild(caption);
 
   const grid = buildLinkedInMediaGrid(list, (index) =>
@@ -450,6 +452,13 @@ function appendSlideMedia(parent, slide, onOpen, zoomable) {
     wrap.appendChild(img);
   }
 
+  if (slide.caption?.trim()) {
+    const cap = document.createElement("p");
+    cap.className = "carousel-slide-caption";
+    cap.textContent = slide.caption.trim();
+    wrap.appendChild(cap);
+  }
+
   if (zoomable && onOpen) bindTapUnlessScroll(wrap, onOpen);
   parent.appendChild(wrap);
 }
@@ -667,7 +676,7 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
     mediaCol.classList.add("li-modal-media--feed");
     el.classList.add("is-li-desktop");
     liCaptionTop.hidden = false;
-    liCaptionTop.textContent = captionEl.textContent;
+      liCaptionTop.innerHTML = captionEl.innerHTML;
     captionEl.hidden = true;
     prevBtn.hidden = true;
     nextBtn.hidden = true;
@@ -798,7 +807,7 @@ export function mountLightbox({ reviewSlot, onClose } = {}) {
 
       handleEl.textContent = brand.handle;
       displayNameEl.textContent = `${brand.name} · ${formatLabel}`;
-      captionEl.textContent = title || brand.name;
+      captionEl.innerHTML = sanitizeRichHtml(title) || brand.name;
 
       const immersive = platform !== "fallback";
       modal.hidden = !immersive;
